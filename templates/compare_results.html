@@ -1,0 +1,1158 @@
+{% extends "base.html" %}
+
+{% block title %}
+Stock Comparison
+{% endblock %}
+
+{% block content %}
+
+<div class="comparison-results-page">
+
+    <!-- ==========================================
+         BREADCRUMB
+    =========================================== -->
+
+    <div class="results-breadcrumb">
+
+        <a href="{{ url_for('dashboard') }}">
+            Home
+        </a>
+
+        <span>›</span>
+
+        <a href="{{ url_for('compare') }}">
+            Compare Stocks
+        </a>
+
+        <span>›</span>
+
+        <p>
+            {% for stock in stocks %}
+
+            {{ stock.symbol }}
+
+            {% if not loop.last %}
+            vs
+            {% endif %}
+
+            {% endfor %}
+        </p>
+
+    </div>
+
+    <!-- ==========================================
+         PAGE HEADING
+    =========================================== -->
+
+    <section class="comparison-heading-section">
+
+        <h1>
+
+            {% for stock in stocks %}
+
+            {{ stock.name }}
+
+            {% if not loop.last %}
+            vs
+            {% endif %}
+
+            {% endfor %}
+
+            Stock Comparison
+
+        </h1>
+
+        <p>
+            Compare market performance, valuation,
+            financial metrics and company fundamentals.
+        </p>
+
+        <span class="comparison-updated-date">
+
+            <i class="bi bi-clock"></i>
+
+            Last updated:
+            {{ current_date | default("Today") }}
+
+        </span>
+
+    </section>
+
+    <!-- ==========================================
+         TOP COMPARISON SECTION
+    =========================================== -->
+
+    <section class="comparison-top-grid">
+
+        <!-- KEY HIGHLIGHTS -->
+
+        <div class="comparison-panel key-highlights-panel">
+
+            <div class="comparison-panel-heading">
+
+                <div>
+
+                    <span class="panel-label">
+                        Overview
+                    </span>
+
+                    <h2>
+                        Key Highlights
+                    </h2>
+
+                </div>
+
+                <div class="panel-icon">
+
+                    <i class="bi bi-stars"></i>
+
+                </div>
+
+            </div>
+
+            <!-- CURRENT PRICE -->
+
+            <div class="highlight-metric">
+
+                <div class="metric-heading">
+
+                    <span>
+                        Current Price
+                    </span>
+
+                    <i class="bi bi-currency-rupee"></i>
+
+                </div>
+
+                <div class="metric-stock-values">
+
+                    {% for stock in stocks %}
+
+                    <div class="metric-stock">
+
+                        <span class="metric-symbol">
+                            {{ stock.symbol }}
+                        </span>
+
+                        <strong>
+
+                            {% if stock.price != "N/A" %}
+
+                            ₹{{ "{:,.2f}".format(
+                            stock.price | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- PE RATIO -->
+
+            <div class="highlight-metric">
+
+                <div class="metric-heading">
+
+                    <span>
+                        P/E Ratio
+                    </span>
+
+                    <i class="bi bi-bar-chart"></i>
+
+                </div>
+
+                <div class="metric-stock-values">
+
+                    {% for stock in stocks %}
+
+                    <div class="metric-stock">
+
+                        <span class="metric-symbol">
+                            {{ stock.symbol }}
+                        </span>
+
+                        <strong>
+
+                            {% if stock.pe_ratio != "N/A" %}
+
+                            {{ "%.2f" | format(
+                            stock.pe_ratio | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- MARKET CAP -->
+
+            <div class="highlight-metric">
+
+                <div class="metric-heading">
+
+                    <span>
+                        Market Capitalization
+                    </span>
+
+                    <i class="bi bi-buildings"></i>
+
+                </div>
+
+                <div class="metric-stock-values">
+
+                    {% for stock in stocks %}
+
+                    <div class="metric-stock">
+
+                        <span class="metric-symbol">
+                            {{ stock.symbol }}
+                        </span>
+
+                        <strong>
+
+                            {% if stock.market_cap != "N/A" %}
+
+                            ₹{{
+                            "%.2f" | format(
+                            (
+                            stock.market_cap
+                            | float
+                            )
+                            / 10000000
+                            )
+                            }} Cr
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- EPS -->
+
+            <div class="highlight-metric">
+
+                <div class="metric-heading">
+
+                    <span>
+                        Earnings Per Share
+                    </span>
+
+                    <i class="bi bi-graph-up-arrow"></i>
+
+                </div>
+
+                <div class="metric-stock-values">
+
+                    {% for stock in stocks %}
+
+                    <div class="metric-stock">
+
+                        <span class="metric-symbol">
+                            {{ stock.symbol }}
+                        </span>
+
+                        <strong>
+
+                            {% if stock.eps != "N/A" %}
+
+                            ₹{{ "%.2f" | format(
+                            stock.eps | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- SECTOR -->
+
+            <div class="highlight-metric">
+
+                <div class="metric-heading">
+
+                    <span>
+                        Sector
+                    </span>
+
+                    <i class="bi bi-grid"></i>
+
+                </div>
+
+                <div class="metric-stock-values">
+
+                    {% for stock in stocks %}
+
+                    <div class="metric-stock">
+
+                        <span class="metric-symbol">
+                            {{ stock.symbol }}
+                        </span>
+
+                        <strong>
+                            {{ stock.sector }}
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SHARE PRICE COMPARISON -->
+
+        <div class="comparison-panel share-price-panel">
+
+            <div class="comparison-panel-heading">
+
+                <div>
+
+                    <span class="panel-label">
+                        Live Market
+                    </span>
+
+                    <h2>
+                        Share Price
+                    </h2>
+
+                </div>
+
+                <div class="panel-icon">
+
+                    <i class="bi bi-bar-chart-fill"></i>
+
+                </div>
+
+            </div>
+
+            <p class="panel-description">
+
+                Current market price comparison
+                of the selected companies.
+
+            </p>
+
+            <!-- CHART PLACEHOLDER -->
+
+            <div class="share-price-chart">
+
+                {% for stock in stocks %}
+
+                <div class="price-chart-row">
+
+                    <div class="price-chart-company">
+
+                        <span class="chart-company-symbol">
+
+                            {{ stock.symbol }}
+
+                        </span>
+
+                        <span>
+
+                            {% if stock.price != "N/A" %}
+
+                            ₹{{ "{:,.2f}".format(
+                            stock.price | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+                    <div class="price-chart-track">
+
+                        {% if loop.index0 == 0 %}
+
+                        <div class="price-chart-bar bar-width-55"></div>
+
+                        {% elif loop.index0 == 1 %}
+
+                        <div class="price-chart-bar bar-width-73"></div>
+
+                        {% else %}
+
+                        <div class="price-chart-bar bar-width-90"></div>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="chart-information">
+
+                <i class="bi bi-info-circle"></i>
+
+                All prices are displayed in
+                Indian Rupees.
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ==========================================
+     HISTORICAL SHARE PRICE
+=========================================== -->
+
+    <section class="comparison-panel historical-panel">
+
+        <div class="comparison-panel-heading">
+
+            <div>
+
+                <span class="panel-label">
+                    Performance
+                </span>
+
+                <h2>
+                    Historical Share Prices
+                </h2>
+
+            </div>
+
+            <!-- CHART PERIOD BUTTONS -->
+
+            <div class="chart-period-buttons">
+
+                <button type="button" data-period="1M">
+                    1M
+                </button>
+
+                <button type="button" data-period="6M">
+                    6M
+                </button>
+
+                <button type="button" class="active" data-period="1Y">
+                    1Y
+                </button>
+
+                <button type="button" data-period="3Y">
+                    3Y
+                </button>
+
+                <button type="button" data-period="5Y">
+                    5Y
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- REAL HISTORICAL CHART -->
+
+        <div class="historical-chart-container">
+
+            <canvas id="historicalPriceChart"></canvas>
+
+        </div>
+
+    </section>
+
+    <!-- ==========================================
+         FINANCIAL METRICS
+    =========================================== -->
+
+    <section class="financial-comparison-section">
+
+        <div class="financial-section-heading">
+
+            <span class="panel-label">
+                Financial Analysis
+            </span>
+
+            <h2>
+                Company Fundamentals
+            </h2>
+
+            <p>
+
+                Compare important financial metrics
+                of the selected companies.
+
+            </p>
+
+        </div>
+
+        <div class="financial-chart-grid">
+
+            <!-- PE RATIO -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        P/E Ratio
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="pe_ratio"
+                                data-value="{{ stock.pe_ratio if stock.pe_ratio != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.pe_ratio != "N/A" %}
+
+                            {{ "%.2f" | format(
+                            stock.pe_ratio | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- MARKET CAP -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        Market Capitalization
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="market_cap"
+                                data-value="{{ stock.market_cap if stock.market_cap != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.market_cap != "N/A" %}
+
+                            ₹{{
+                            "%.0f" | format(
+                            (
+                            stock.market_cap
+                            | float
+                            )
+                            / 10000000
+                            )
+                            }} Cr
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- REVENUE -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        Revenue
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="revenue"
+                                data-value="{{ stock.revenue if stock.revenue != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.revenue != "N/A" %}
+
+                            ₹{{
+                            "%.0f" | format(
+                            (
+                            stock.revenue
+                            | float
+                            )
+                            / 10000000
+                            )
+                            }} Cr
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- RETURN ON EQUITY -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        Return on Equity
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="roe"
+                                data-value="{{ stock.roe if stock.roe != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.roe != "N/A" %}
+
+                            {{
+                            "%.2f" | format(
+                            (
+                            stock.roe
+                            | float
+                            )
+                            * 100
+                            )
+                            }}%
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- EPS -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        Earnings Per Share
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="eps"
+                                data-value="{{ stock.eps if stock.eps != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.eps != "N/A" %}
+
+                            ₹{{ "%.2f" | format(
+                            stock.eps | float
+                            ) }}
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- DIVIDEND YIELD -->
+
+            <div class="comparison-panel financial-chart-card">
+
+                <div class="financial-card-heading">
+
+                    <h3>
+                        Dividend Yield
+                    </h3>
+
+                    <i class="bi bi-info-circle"></i>
+
+                </div>
+
+                <div class="financial-bars">
+
+                    {% for stock in stocks %}
+
+                    <div class="financial-bar-item">
+
+                        <span>
+                            {{ stock.symbol }}
+                        </span>
+
+                        <div class="financial-bar-track">
+
+                            <div
+                                class="financial-bar dynamic-financial-bar"
+                                data-metric="dividend_yield"
+                                data-value="{{ stock.dividend_yield if stock.dividend_yield != 'N/A' else 0 }}"
+                            ></div>
+
+                        </div>
+
+                        <strong>
+
+                            {% if stock.dividend_yield != "N/A" %}
+
+                            {{ "%.2f"|format(stock.dividend_yield) }}%
+
+                            {% else %}
+
+                            N/A
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ==========================================
+         ABOUT COMPANIES
+    =========================================== -->
+
+    <section class="company-information-section">
+
+        <div class="financial-section-heading">
+
+            <span class="panel-label">
+                Company Information
+            </span>
+
+            <h2>
+                About the Companies
+            </h2>
+
+        </div>
+
+        <div class="company-information-grid">
+
+            {% for stock in stocks %}
+
+            <article class="comparison-panel company-information-card">
+
+                <div class="company-card-top">
+
+                    <div class="company-letter">
+
+                        {{ stock.symbol[0] }}
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            {{ stock.name }}
+                        </h3>
+
+                        <p>
+                            {{ stock.symbol }}
+                            •
+                            {{ stock.sector }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="company-description">
+
+                    {{ stock.description }}
+
+                </div>
+
+                <div class="company-card-footer">
+
+                    <span>
+
+                        <i class="bi bi-building"></i>
+
+                        {{ stock.industry }}
+
+                    </span>
+
+                    {% if stock.website != "N/A" %}
+
+                    <a href="{{ stock.website }}" target="_blank" rel="noopener noreferrer">
+
+                        Visit Website
+
+                        <i class="bi bi-arrow-up-right"></i>
+
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            </article>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</div>
+<!-- Chart.js -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="historical-chart-data" type="application/json">
+    {{ chart_data | default({}, true) | tojson }}
+</script>
+
+<!-- Chart.js -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof Chart === "undefined") {
+        console.error("Chart.js failed to load.");
+        return;
+    }
+
+    // Set financial bar heights from the real values in each card.
+    document.querySelectorAll(".financial-chart-card").forEach(function (card) {
+        const bars = Array.from(card.querySelectorAll(".dynamic-financial-bar"));
+        const values = bars.map(function (bar) {
+            const value = Number(bar.dataset.value);
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        });
+        const maximumValue = Math.max(...values, 0);
+
+        bars.forEach(function (bar, index) {
+            const value = values[index];
+            if (maximumValue <= 0 || value <= 0) {
+                bar.style.height = "0";
+                return;
+            }
+            const height = Math.max(8, (value / maximumValue) * 90);
+            bar.style.height = height.toFixed(2) + "%";
+        });
+    });
+
+    const chartDataElement = document.getElementById("historical-chart-data");
+    const historicalData = chartDataElement ? JSON.parse(chartDataElement.textContent) : {};
+
+    const chartCanvas = document.getElementById("historicalPriceChart");
+
+    if (!chartCanvas) return;
+
+    const chartColors = ["#6c63ff", "#31527f", "#ff8a3d"];
+    let selectedPeriod = "1Y";
+
+    function createDatasets(period) {
+        const periodStocks = historicalData[period] || [];
+
+        return periodStocks.map(function (stock, index) {
+            const dates = stock.dates || [];
+            const prices = stock.prices || [];
+
+            return {
+                label: stock.symbol,
+                data: dates.map(function (date, i) {
+                    return {
+                        x: new Date(date + "T00:00:00").getTime(),
+                        y: Number(prices[i])
+                    };
+                }).filter(function (point) {
+                    return Number.isFinite(point.x) && Number.isFinite(point.y);
+                }).sort(function (a, b) {
+                    return a.x - b.x;
+                }),
+                borderColor: chartColors[index % chartColors.length],
+                backgroundColor: chartColors[index % chartColors.length],
+                borderWidth: 2.5,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                tension: 0.25,
+                fill: false,
+                parsing: false
+            };
+        });
+    }
+
+    const historicalChart = new Chart(chartCanvas, {
+        type: "line",
+        data: {
+            datasets: createDatasets(selectedPeriod)
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: "bottom",
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: "circle",
+                        padding: 25,
+                        font: { family: "Poppins", size: 12 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return context.dataset.label + ": ₹" +
+                                Number(context.parsed.y).toLocaleString("en-IN", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: "linear",
+                    grid: { display: false },
+                    ticks: {
+                        maxTicksLimit: 8,
+                        maxRotation: 0,
+                        callback: function (value) {
+                            const date = new Date(Number(value));
+                            return date.toLocaleDateString(
+                                "en-IN",
+                                selectedPeriod === "1M"
+                                    ? { day: "2-digit", month: "short" }
+                                    : { month: "short", year: "numeric" }
+                            );
+                        },
+                        font: { family: "Poppins", size: 11 }
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: { color: "#edf0f6" },
+                    ticks: {
+                        callback: function (value) {
+                            return "₹" + Number(value).toLocaleString("en-IN");
+                        },
+                        font: { family: "Poppins", size: 11 }
+                    }
+                }
+            }
+        }
+    });
+
+    const periodButtons = document.querySelectorAll(
+        ".chart-period-buttons button"
+    );
+
+    periodButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            selectedPeriod = button.dataset.period;
+
+            periodButtons.forEach(function (currentButton) {
+                currentButton.classList.remove("active");
+            });
+
+            button.classList.add("active");
+            historicalChart.data.datasets = createDatasets(selectedPeriod);
+            historicalChart.update();
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}
+Stock Analysis
+{% endblock %}
+
+{% block content %}
+
+<div class="analysis-page">
+
+    {% if stock %}
+
+    <!-- STOCK HEADER -->
+
+    <!-- ==========================================
+     HERO SECTION
+========================================== -->
+    <div class="analysis-hero">
+
+        <div class="hero-left">
+
+            <span class="hero-label">
+                AI Investment Analysis
+            </span>
+
+            <h1>{{ stock.name }}</h1>
+
+            <div class="hero-symbol">
+                <i class="bi bi-building"></i>
+                {{ stock.symbol }}
+            </div>
+
+        </div>
+
+
+        <div class="hero-right">
+
+            <div class="hero-price">
+                ₹{{ stock.price }}
+            </div>
+
+            <div class="hero-change
+            {% if stock.price_change_value > 0 %}
+                positive
+            {% elif stock.price_change_value < 0 %}
+                negative
+            {% endif %}
+        ">
+
+                {% if stock.price_change_value > 0 %}
+                <i class="bi bi-arrow-up-right"></i>
+                {% elif stock.price_change_value < 0 %} <i class="bi bi-arrow-down-right"></i>
+                    {% endif %}
+
+                    {{ stock.price_change }} Today
+
+            </div>
+
+            <div class="hero-grid">
+
+                <div class="hero-item">
+                    <span>Day High</span>
+                    <strong>₹{{ stock.day_high }}</strong>
+                </div>
+
+                <div class="hero-item">
+                    <span>Day Low</span>
+                    <strong>₹{{ stock.day_low }}</strong>
+                </div>
+
+                <div class="hero-item">
+                    <span>Volume</span>
+                    <strong>{{ stock.volume }}</strong>
+                </div>
+
+                
+
+            </div>
+
+            <div class="hero-live">
+                <span class="live-dot"></span>
+                Live Market Price
+            </div>
+
+        </div>
+
+    </div>
+    <!-- ==========================================
+     AI SCORE SECTION
+========================================== -->
+
+    <div class="analysis-score-grid">
+
+        <!-- AI Recommendation -->
+
+        <div class="analysis-ai-card">
+
+            <div class="analysis-ai-header">
+
+                <span>AI Recommendation</span>
+
+                <i class="bi bi-cpu"></i>
+
+            </div>
+
+            <h2 class="
+            {% if stock.recommendation == 'BUY' %}
+                buy-signal
+            {% elif stock.recommendation == 'SELL' %}
+                sell-signal
+            {% else %}
+                hold-signal
+            {% endif %}
+        ">
+
+                {{ stock.recommendation or "HOLD" }}
+
+            </h2>
+
+            <p>
+
+                Confidence
+
+                <strong>
+
+                    {{ stock.confidence or "78%" }}
+
+                </strong>
+
+            </p>
+            <div class="recommendation-desc">
+
+                Market trend is currently neutral.
+
+                Continue monitoring before taking a position.
+
+            </div>
+
+            <div class="confidence-progress">
+
+                <div class="confidence-fill" style="width:78%;">
+
+                </div>
+
+            </div>
+
+            <div class="analysis-update">
+
+                <i class="bi bi-clock-history"></i>
+
+                Updated just now
+
+            </div>
+
+        </div>
+
+
+        <!-- Overall Score -->
+
+        <div class="overall-score-card">
+
+            <span>
+
+                Overall AI Score
+
+            </span>
+
+            <div class="overall-score-circle">
+
+                84
+
+            </div>
+
+            <small>
+
+                Excellent
+
+            </small>
+            <div class="score-description">
+
+                Strong Company
+
+            </div>
+
+            <div class="score-footer">
+
+                AI Generated Analysis
+
+            </div>
+
+        </div>
+
+
+        <!-- Fundamental -->
+
+        <div class="mini-score-card">
+
+            <span>
+
+                Fundamental
+
+            </span>
+
+            <strong>
+
+                91%
+
+            </strong>
+            <p class="metric-info">
+
+                Excellent Financial Health
+
+            </p>
+
+            <div class="mini-progress">
+
+                <div class="mini-progress-fill" style="width:91%;"></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Technical -->
+
+        <div class="mini-score-card">
+
+            <span>
+
+                Technical
+
+            </span>
+
+            <strong>
+
+                76%
+
+            </strong>
+            <p class="metric-info">
+
+                Positive Momentum
+
+            </p>
+
+            <div class="mini-progress">
+
+                <div class="mini-progress-fill" style="width:76%;"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- STOCK INFORMATION CARDS -->
+
+    <div class="analysis-grid">
+
+        <div class="info-card">
+            <h5>
+
+                <i class="bi bi-bank2"></i>
+
+                Market Cap
+
+            </h5>
+            <p>{{ stock.market_cap }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5>
+                <i class="bi bi-graph-up-arrow"></i>
+
+                PE Ratio
+            </h5>
+            <p>{{ stock.pe }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5> <i class="bi bi-file-earmark-image"></i>EPS</h5>
+            <p>{{ stock.eps }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-diagram-3"></i> Sector</h5>
+            <p>{{ stock.sector }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-building"></i>Industry</h5>
+
+            <p>{{ stock.industry }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-cash-stack"></i> Revenue </h5>
+
+            <p>{{ stock.revenue }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-percent"></i> ROE</h5>
+            <p>{{ stock.roe }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-coin"></i> Dividend Yield</h5>
+            <p>{{ stock.dividend }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-arrow-up-circle"></i> 52W High</h5>
+            <p>{{ stock.high52 }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-arrow-down-circle"></i> 52W Low</h5>
+            <p>{{ stock.low52 }}</p>
+        </div>
+
+        <div class="info-card">
+            <h5><i class="bi bi-people"></i> Employees</h5>
+            <p>{{ stock.employees }}</p>
+        </div>
+
+    </div>
+
+
+    <!-- MAIN ANALYSIS SECTION -->
+
+    <div class="analysis-layout">
+
+        <!-- LEFT SIDE -->
+
+        <div class="analysis-left">
+
+            <!-- PRICE CHART -->
+
+            <div class="chart-card">
+
+                <h4>Price Chart</h4>
+
+                {% if chart %}
+
+                {{ chart|safe }}
+
+                {% else %}
+
+                <div class="chart-placeholder">
+                    Unable to load chart.
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- CARDS BELOW PRICE CHART -->
+
+            <div class="below-chart-grid">
+
+                <!-- COMPANY WEBSITE -->
+
+                <div class="news-card company-card">
+
+                    <h4>Company Website</h4>
+
+                    {% if stock.website != "N/A" %}
+
+                    <a href="{{ stock.website }}" target="_blank" rel="noopener noreferrer">
+
+                        {{ stock.website }}
+
+                    </a>
+
+                    {% else %}
+
+                    <p>N/A</p>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- AI RECOMMENDATION -->
+
+                <div class="ai-card recommendation-card">
+
+                    <h4>AI Recommendation</h4>
+
+                    <div class="placeholder-content">
+
+                        Groq AI Analysis will be added here.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="analysis-right">
+
+            <!-- LATEST NEWS -->
+
+            <div class="news-card latest-news-card">
+
+                <h4>Latest News</h4>
+
+                {% if news %}
+
+                <div class="news-scroll">
+
+                    {% for article in news %}
+
+                    <div class="news-item">
+
+                        <h5>
+                            {{ article.title }}
+                        </h5>
+
+                        <p>
+                            {{ article.summary }}
+                        </p>
+
+                        <div class="news-footer">
+
+                            <span>
+
+                                {{ article.publisher }}
+
+                                {% if article.date %}
+                                • {{ article.date }}
+                                {% endif %}
+
+                            </span>
+
+                            {% if article.url and article.url != "#" %}
+
+                            <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer"
+                                class="read-more-link">
+
+                                Read More →
+
+                            </a>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+                {% else %}
+
+                <div class="placeholder-content">
+
+                    No latest news available.
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% else %}
+
+    <!-- EMPTY SEARCH STATE -->
+
+    <div class="empty-state">
+
+        <i class="bi bi-search"></i>
+
+        <h2>Search Any Stock</h2>
+
+        <p>
+            Search from the dashboard to start analysis.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

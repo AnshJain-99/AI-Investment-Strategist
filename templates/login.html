@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block auth %}
+
+<div class="auth-container">
+
+<div class="auth-card">
+
+<div class="logo">
+
+<i class="bi bi-graph-up-arrow"></i>
+
+</div>
+
+<h2 class="auth-title">
+
+Welcome Back
+
+</h2>
+
+<p class="subtitle">
+
+AI Investment Strategist
+
+</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+
+        <div class="alert alert-{{ category }} mb-3">
+            {{ message }}
+        </div>
+
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST">
+
+<div class="mb-3">
+
+<input
+type="email"
+name="email"
+class="form-control"
+placeholder="Email Address"
+required>
+
+</div>
+
+<div class="mb-3">
+
+<input
+type="password"
+name="password"
+class="form-control"
+placeholder="Password"
+required>
+
+</div>
+
+<div class="d-flex justify-content-between mb-4">
+
+<div>
+
+<input type="checkbox">
+
+Remember
+
+</div>
+
+<a href="/forgot-password">
+    Forgot Password?
+</a>
+
+</div>
+
+<button class="btn btn-login">
+
+Login
+
+</button>
+
+</form>
+
+<hr>
+
+<p class="text-center">
+
+Don't have an account?
+
+<a href="/register">
+
+Register
+
+</a>
+
+</p>
+
+</div>
+
+</div>
+
+{% endblock %}

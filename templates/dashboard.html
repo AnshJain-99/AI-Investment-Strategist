@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>Welcome back, {{ current_user.full_name }} 👋</h2>
+
+<p>Here's your AI-powered investment dashboard.</p>
+
+
+<div class="dashboard-grid">
+
+    <!-- Portfolio -->
+
+    <div class="stat-card">
+
+        <div class="card-icon green">
+            <i class="bi bi-wallet2"></i>
+        </div>
+
+        <div class="card-info">
+
+            <h6>Portfolio Value</h6>
+
+            <h3>{{ data.portfolio_value }}</h3>
+
+            <span>{{ data.today_change }} Today</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- NIFTY -->
+
+    <div class="stat-card">
+
+        <div class="card-icon blue">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+
+        <div class="card-info">
+
+            <h6>NIFTY 50</h6>
+
+            <h3>{{ data.nifty }}</h3>
+
+            <span>{{ data.nifty_change }}</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- SENSEX -->
+
+    <div class="stat-card">
+
+        <div class="card-icon orange">
+            <i class="bi bi-bar-chart-line"></i>
+        </div>
+
+        <div class="card-info">
+
+            <h6>SENSEX</h6>
+
+            <h3>{{ data.sensex }}</h3>
+
+            <span>{{ data.sensex_change }}</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- AI -->
+
+    <div class="stat-card">
+
+        <div class="card-icon purple">
+            <i class="bi bi-cpu"></i>
+        </div>
+
+        <div class="card-info">
+
+            <h6>AI Recommendation</h6>
+
+            <h3>{{ data.ai_signal }}</h3>
+
+            <span>
+                Confidence {{ data.confidence }}
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- MARKET OVERVIEW -->
+
+<div class="dashboard-row">
+
+    <div class="chart-card market-overview-card">
+
+        <div class="card-header market-chart-header">
+
+            <div>
+
+                <h4>Market Overview</h4>
+
+                <span>
+                    NIFTY 50 and SENSEX performance
+                    over the last 6 months
+                </span>
+
+            </div>
+
+
+            <div class="live-market-badge">
+
+                <span class="live-dot"></span>
+
+                Live Market
+
+            </div>
+
+        </div>
+
+
+        <!-- LIVE MARKET CHART -->
+
+        <div id="market-chart" class="dashboard-market-chart">
+
+            {% if market_chart %}
+
+            {{ market_chart | safe }}
+
+            {% else %}
+
+            <div class="chart-placeholder">
+
+                <i class="bi bi-graph-up-arrow"></i>
+
+                <h5>
+                    Market chart unavailable
+                </h5>
+
+                <p>
+                    Unable to load market data.
+                    Please refresh the page.
+                </p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- DASHBOARD BOTTOM -->
+
+<div class="dashboard-bottom">
+
+
+    <!-- MARKET NEWS -->
+
+    <div class="news-card">
+
+        <!-- NEWS HEADER -->
+
+        <div class="card-header news-card-header">
+
+            <div>
+
+                <span class="news-section-label">
+                    Market Updates
+                </span>
+
+                <h4>
+                    Latest Market News
+                </h4>
+
+            </div>
+
+
+            <div class="live-news-badge">
+
+                <span class="live-dot"></span>
+
+                Live News
+
+            </div>
+
+        </div>
+
+
+        <!-- NEWS LIST -->
+
+        <div class="market-news-list">
+
+            {% if market_news %}
+
+            {% for article in market_news %}
+
+            <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" class="market-news-item">
+
+                <div class="news-icon">
+
+                    <i class="bi bi-newspaper"></i>
+
+                </div>
+
+
+                <div class="news-details">
+
+                    <div class="news-meta">
+
+                        <span class="news-source">
+
+                            {{ article.source }}
+
+                        </span>
+
+                        <span class="news-date">
+
+                            <i class="bi bi-clock"></i>
+
+                            {{ article.published }}
+
+                        </span>
+
+                    </div>
+
+
+                    <h5>
+
+                        {{ article.title }}
+
+                    </h5>
+
+                </div>
+
+
+                <div class="news-link-icon">
+
+                    <i class="bi bi-arrow-up-right"></i>
+
+                </div>
+
+            </a>
+
+            {% endfor %}
+
+
+            {% else %}
+
+            <div class="news-empty-state">
+
+                <i class="bi bi-wifi-off"></i>
+
+                <h5>
+                    Market news is unavailable
+                </h5>
+
+                <p>
+                    Please refresh the dashboard after some time.
+                </p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- AI RECOMMENDATION -->
+
+    <div class="ai-card">
+
+        <div class="ai-card-top">
+
+            <div>
+                <span class="ai-subtitle">
+                    AI Investment Strategist
+                </span>
+
+                <h2>AI Recommendation</h2>
+            </div>
+
+            <div class="ai-chip">
+                <i class="bi bi-cpu"></i>
+            </div>
+
+        </div>
+
+
+        <div class="signal-row">
+
+            <div class="signal-badge
+            {% if data.ai_signal == 'BUY' %}
+                buy
+            {% elif data.ai_signal == 'SELL' %}
+                sell
+            {% else %}
+                hold
+            {% endif %}
+        ">
+
+                {{ data.ai_signal }}
+
+            </div>
+
+            <div class="confidence-text">
+
+                {{ data.confidence }}
+
+                <span>Confidence</span>
+
+            </div>
+
+        </div>
+
+
+        <div class="progress">
+
+            <div class="progress-fill" data-confidence="{{ data.confidence }}">
+            </div>
+
+        </div>
+
+
+        <div class="ai-reasons">
+
+            {% if data.ai_signal=="BUY" %}
+
+            <div><i class="bi bi-check-circle-fill"></i> Strong Fundamentals</div>
+
+            <div><i class="bi bi-check-circle-fill"></i> Positive Momentum</div>
+
+            <div><i class="bi bi-check-circle-fill"></i> Bullish Market Trend</div>
+
+            {% elif data.ai_signal=="SELL" %}
+
+            <div><i class="bi bi-exclamation-circle-fill"></i> Weak Momentum</div>
+
+            <div><i class="bi bi-exclamation-circle-fill"></i> High Risk</div>
+
+            <div><i class="bi bi-exclamation-circle-fill"></i> Bearish Trend</div>
+
+            {% else %}
+
+            <div><i class="bi bi-dash-circle-fill"></i> Neutral Trend</div>
+
+            <div><i class="bi bi-dash-circle-fill"></i> Wait for Confirmation</div>
+
+            <div><i class="bi bi-dash-circle-fill"></i> Monitor Market</div>
+
+            {% endif %}
+
+        </div>
+
+
+        <div class="updated-time">
+
+            <i class="bi bi-clock-history"></i>
+
+            Updated just now
+
+        </div>
+
+
+        <a href="#" id="viewAnalysisBtn" class="analysis-btn">
+
+            View Full Analysis
+
+            <i class="bi bi-arrow-right"></i>
+
+        </a>
+
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const analysisButton =
+            document.getElementById(
+                "viewAnalysisBtn"
+            );
+
+        if (analysisButton) {
+
+            analysisButton.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    const stock =
+                        localStorage.getItem(
+                            "selectedStock"
+                        );
+
+                    if (!stock) {
+
+                        alert(
+                            "Please search a stock first."
+                        );
+
+                        return;
+
+                    }
+
+                    window.location.href =
+                        "/analysis?symbol=" +
+                        encodeURIComponent(stock);
+
+                }
+            );
+
+        }
+
+
+        window.addEventListener("load", function () {
+
+            const graph = document.querySelector(".js-plotly-plot");
+
+            if (graph) {
+
+                Plotly.relayout(graph, {
+                    height: 390
+                });
+
+            }
+
+        });
+
+
+
+        const progressBar = document.querySelector(".progress-fill");
+
+        if (progressBar) {
+
+            const confidence =
+                progressBar.dataset.confidence || "0%";
+
+            progressBar.style.width = confidence;
+
+        }
+
+    });
+</script>
+{% endblock %}

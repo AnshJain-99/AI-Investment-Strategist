@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block auth %}
+
+<div class="auth-container">
+
+<div class="auth-card">
+
+<div class="logo">
+
+<i class="bi bi-person-plus-fill"></i>
+
+</div>
+
+<h2 class="auth-title">
+
+Create Account
+
+</h2>
+
+<p class="subtitle">
+
+Join AI Investment Strategist
+
+</p>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+
+        <div class="alert alert-{{ category }} mb-3">
+            {{ message }}
+        </div>
+
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST">
+
+<div class="mb-3">
+
+<input
+type="text"
+name="fullname"
+class="form-control"
+placeholder="Full Name"
+required>
+
+</div>
+
+<div class="mb-3">
+
+<input
+type="email"
+name="email"
+class="form-control"
+placeholder="Email"
+required>
+
+</div>
+
+<div class="mb-3">
+
+<input
+type="password"
+name="password"
+class="form-control"
+placeholder="Password"
+required>
+
+</div>
+
+<div class="mb-4">
+
+<input
+type="password"
+name="confirm"
+class="form-control"
+placeholder="Confirm Password"
+required>
+
+</div>
+
+<button class="btn btn-login">
+
+Create Account
+
+</button>
+
+</form>
+
+<hr>
+
+<p class="text-center">
+
+Already have an account?
+
+<a href="/">
+
+Login
+
+</a>
+
+</p>
+
+</div>
+
+</div>
+
+{% endblock %}

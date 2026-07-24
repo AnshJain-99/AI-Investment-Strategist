@@ -1,0 +1,267 @@
+/* =====================================================
+   DASHBOARD - STAT CARDS
+===================================================== */
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:18px;
+    margin-top:22px;
+}
+
+.stat-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    transition:.3s;
+}
+
+.stat-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.card-icon{
+    width:50px;
+    height:50px;
+    border-radius:16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+    font-size:20px;
+}
+
+.card-icon.green{
+    background:#10B981;
+}
+
+.card-icon.blue{
+    background:#7C3AED;
+}
+
+.card-icon.orange{
+    background:#EA580C;
+}
+
+.card-icon.purple{
+    background:#8B5CF6;
+}
+
+.card-info{
+    flex:1;
+}
+
+.card-info h6{
+    margin:0;
+    color:#6B7280;
+    font-size:13px;
+}
+
+.card-info h3{
+    margin:8px 0;
+    font-size:22px;
+    font-weight:700;
+    color:#111827;
+}
+
+.card-info span{
+    color:#16A34A;
+    font-size:13px;
+}
+
+
+.chart-placeholder h5{
+    margin-bottom:8px;
+}
+
+.chart-placeholder p{
+    text-align:center;
+}
+
+.ai-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.ai-subtitle{
+    color:#6B7280;
+    font-size:13px;
+}
+
+.ai-card-top h2{
+    margin-top:6px;
+    font-size:28px;
+    font-weight:700;
+}
+
+.ai-chip{
+    width:58px;
+    height:58px;
+    border-radius:18px;
+    background:#F3F0FF;
+    color:#7C3AED;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+}
+
+
+/* =====================================================
+   SIGNAL
+===================================================== */
+
+.signal-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.signal-badge{
+    padding:10px 22px;
+    border-radius:30px;
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+}
+
+.signal-badge.buy{
+    background:#16A34A;
+}
+
+.signal-badge.sell{
+    background:#DC2626;
+}
+
+.signal-badge.hold{
+    background:#F59E0B;
+}
+
+.confidence-text{
+    text-align:right;
+    font-size:24px;
+    font-weight:700;
+}
+
+.confidence-text span{
+    display:block;
+    font-size:12px;
+    color:#6B7280;
+    font-weight:500;
+}
+
+
+/* =====================================================
+   PROGRESS
+===================================================== */
+
+.progress{
+    height:10px;
+    border-radius:20px;
+    overflow:hidden;
+    background:#ECECF3;
+    margin:22px 0;
+}
+
+.progress-fill{
+    width:0;
+    height:100%;
+    border-radius:20px;
+    background:linear-gradient(90deg,#7C3AED,#A855F7);
+    transition:width .8s ease;
+}
+
+
+/* =====================================================
+   AI REASONS
+===================================================== */
+
+.ai-reasons{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin:26px 0;
+}
+
+.ai-reasons div{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:14px;
+}
+
+.ai-reasons i{
+    color:#16A34A;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.updated-time{
+    color:#6B7280;
+    font-size:13px;
+    margin-bottom:22px;
+}
+
+.analysis-btn{
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    padding:14px;
+    border-radius:14px;
+    background:#7C3AED;
+    color:#fff;
+    text-decoration:none;
+    font-weight:600;
+    transition:.25s;
+}
+
+.analysis-btn:hover{
+    background:#6D28D9;
+    color:#fff;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:1100px){
+
+    .dashboard-bottom{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:768px){
+
+    .market-chart-header,
+    .news-card-header,
+    .signal-row{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:15px;
+    }
+
+    .dashboard-market-chart{
+        min-height:320px;
+    }
+
+    .market-news-item{
+        flex-direction:column;
+    }
+
+}

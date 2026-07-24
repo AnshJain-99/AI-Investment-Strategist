@@ -1,0 +1,724 @@
+/* ======================================================
+   ANALYSIS PAGE
+====================================================== */
+
+.analysis-page{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+}
+
+/* ======================================================
+   HERO SECTION
+====================================================== */
+
+.analysis-hero{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:30px;
+    background:#fff;
+    border:1px solid #e8ebf2;
+    border-radius:24px;
+    padding:32px;
+    box-shadow:0 8px 30px rgba(15,23,42,.05);
+}
+
+.hero-left{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.hero-label{
+    display:inline-flex;
+    align-items:center;
+    width:max-content;
+    padding:8px 14px;
+    border-radius:30px;
+    background:#f3f0ff;
+    color:#7c3aed;
+    font-size:13px;
+    font-weight:600;
+}
+
+.hero-left h1{
+    margin:0;
+    font-size:40px;
+    font-weight:700;
+    color:#111827;
+}
+
+.hero-symbol{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#6b7280;
+    font-size:15px;
+}
+
+.hero-right{
+    min-width:320px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    align-items:flex-end;
+}
+
+.hero-price{
+    font-size:42px;
+    font-weight:700;
+    color:#111827;
+}
+
+.hero-change{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:16px;
+    font-weight:600;
+}
+
+.hero-change.positive{
+    color:#16a34a;
+}
+
+.hero-change.negative{
+    color:#dc2626;
+}
+
+.hero-grid{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+}
+
+.hero-item{
+    background:#f8fafc;
+    border-radius:16px;
+    padding:16px;
+    text-align:center;
+}
+
+.hero-item span{
+    display:block;
+    color:#6b7280;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.hero-item strong{
+    font-size:18px;
+    color:#111827;
+}
+
+.hero-live{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#16a34a;
+    font-size:14px;
+    font-weight:600;
+}
+
+.live-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#22c55e;
+    animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+    0%{
+        transform:scale(.9);
+        opacity:.7;
+    }
+    70%{
+        transform:scale(1.3);
+        opacity:0;
+    }
+    100%{
+        transform:scale(.9);
+        opacity:.7;
+    }
+}
+
+/* ======================================================
+   AI SCORE GRID
+====================================================== */
+
+.analysis-score-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr 1fr;
+    gap:20px;
+}
+
+.analysis-ai-card,
+.overall-score-card,
+.mini-score-card{
+    background:#fff;
+    border:1px solid #e9edf5;
+    border-radius:22px;
+    padding:24px;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.analysis-ai-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.analysis-ai-header span{
+    font-size:15px;
+    font-weight:600;
+}
+
+.analysis-ai-header i{
+    font-size:22px;
+    color:#7c3aed;
+}
+
+.buy-signal{
+    color:#16a34a;
+}
+
+.sell-signal{
+    color:#dc2626;
+}
+
+.hold-signal{
+    color:#ca8a04;
+}
+
+.analysis-ai-card h2{
+    font-size:34px;
+    font-weight:700;
+    margin-bottom:14px;
+}
+
+.analysis-ai-card p{
+    color:#6b7280;
+    margin-bottom:18px;
+}
+
+.recommendation-desc{
+    color:#64748b;
+    font-size:14px;
+    line-height:1.7;
+    margin-bottom:20px;
+}
+
+/* ======================================================
+   CONFIDENCE BAR
+====================================================== */
+
+.confidence-progress{
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:#eceef6;
+    overflow:hidden;
+    margin:18px 0;
+}
+
+.confidence-fill{
+    width:0;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#7c3aed,#8b5cf6);
+    transition:1.2s;
+}
+
+.analysis-update{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#6b7280;
+    font-size:13px;
+}
+
+/* ======================================================
+   OVERALL SCORE
+====================================================== */
+
+.overall-score-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+}
+
+.overall-score-circle{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:34px;
+    font-weight:700;
+    margin:18px 0;
+}
+
+.score-description{
+    margin-top:14px;
+    color:#64748b;
+    font-size:14px;
+}
+
+.score-footer{
+    margin-top:18px;
+    font-size:12px;
+    color:#9ca3af;
+}
+
+/* ======================================================
+   MINI SCORE CARD
+====================================================== */
+
+.mini-score-card span{
+    display:block;
+    color:#6b7280;
+    font-size:14px;
+    margin-bottom:10px;
+}
+
+.mini-score-card strong{
+    font-size:32px;
+    color:#111827;
+}
+
+.metric-info{
+    margin:14px 0;
+    color:#64748b;
+    font-size:13px;
+    line-height:1.6;
+}
+
+.mini-progress{
+    width:100%;
+    height:8px;
+    background:#eceef6;
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.mini-progress-fill{
+    width:0;
+    height:100%;
+    background:linear-gradient(90deg,#22c55e,#16a34a);
+    border-radius:999px;
+    transition:1.2s;
+}
+
+/* ======================================================
+   INFO CARDS
+====================================================== */
+
+.analysis-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:18px;
+}
+
+.info-card{
+    background:#fff;
+    border:1px solid #edf0f6;
+    border-radius:18px;
+    padding:22px;
+    transition:.25s;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.info-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 18px 35px rgba(124,58,237,.08);
+}
+
+.info-card h5{
+    margin-bottom:12px;
+    color:#6b7280;
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+}
+
+.info-card p{
+    margin:0;
+    font-size:22px;
+    font-weight:700;
+    color:#111827;
+    word-break:break-word;
+}
+/* ======================================================
+   ANALYSIS LAYOUT
+====================================================== */
+
+.analysis-layout{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(320px,1fr);
+    gap:24px;
+    align-items:start;
+    margin-top:28px;
+}
+
+.analysis-left{
+    min-width:0;
+}
+
+.analysis-right{
+    min-width:0;
+}
+
+.below-chart-grid{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    gap:24px;
+    margin-top:24px;
+    align-items:stretch;
+}
+
+/* ======================================================
+   CHART CARD
+====================================================== */
+
+.chart-card{
+    background:#fff;
+    border:1px solid #e9edf5;
+    border-radius:22px;
+    padding:24px;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.chart-card h4{
+    margin-bottom:20px;
+    font-size:20px;
+    font-weight:600;
+    color:#111827;
+}
+
+.chart-placeholder{
+    height:420px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:2px dashed #dbe1ea;
+    border-radius:18px;
+    color:#94a3b8;
+    font-size:15px;
+}
+
+/* ======================================================
+   COMPANY CARD
+====================================================== */
+
+.company-card{
+    background:#fff;
+    border:1px solid #e9edf5;
+    border-radius:22px;
+    padding:22px;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.company-card h4{
+    margin-bottom:18px;
+    font-size:18px;
+}
+
+.company-card a{
+    word-break:break-word;
+    color:#7c3aed;
+    font-weight:600;
+}
+
+/* ======================================================
+   RECOMMENDATION CARD
+====================================================== */
+
+.recommendation-card{
+    background:#fff;
+    border:1px solid #e9edf5;
+    border-radius:22px;
+    padding:24px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.recommendation-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.recommendation-header h4{
+    margin:0;
+}
+
+.signal-badge{
+    padding:8px 16px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+}
+
+.signal-buy{
+    background:#ecfdf5;
+    color:#16a34a;
+}
+
+.signal-sell{
+    background:#fef2f2;
+    color:#dc2626;
+}
+
+.signal-hold{
+    background:#fefce8;
+    color:#ca8a04;
+}
+
+.confidence-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.ai-summary{
+    color:#64748b;
+    line-height:1.7;
+    font-size:14px;
+}
+
+/* ======================================================
+   STRENGTHS / RISKS
+====================================================== */
+
+.analysis-grid-two{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.analysis-section{
+    background:#f8fafc;
+    border-radius:16px;
+    padding:18px;
+}
+
+.analysis-section h5{
+    margin-bottom:14px;
+    font-size:15px;
+}
+
+.analysis-section ul{
+    padding-left:18px;
+    margin:0;
+}
+
+.analysis-section li{
+    margin-bottom:10px;
+    color:#475569;
+    line-height:1.6;
+    font-size:14px;
+}
+
+/* ======================================================
+   TARGET BOXES
+====================================================== */
+
+.target-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+}
+
+.target-box{
+    background:#f8fafc;
+    border-radius:16px;
+    padding:18px;
+    text-align:center;
+}
+
+.target-box small{
+    display:block;
+    color:#6b7280;
+    margin-bottom:8px;
+}
+
+.target-box strong{
+    color:#111827;
+    font-size:18px;
+}
+
+/* ======================================================
+   NEWS
+====================================================== */
+
+.latest-news-card{
+    background:#fff;
+    border:1px solid #e9edf5;
+    border-radius:22px;
+    padding:22px;
+    height:700px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 8px 25px rgba(15,23,42,.04);
+}
+
+.latest-news-card h4{
+    margin-bottom:18px;
+}
+
+.news-scroll{
+    flex:1;
+    overflow-y:auto;
+    padding-right:8px;
+}
+
+.news-scroll::-webkit-scrollbar{
+    width:6px;
+}
+
+.news-scroll::-webkit-scrollbar-thumb{
+    background:#c4b5fd;
+    border-radius:20px;
+}
+
+.news-item{
+    padding:18px 0;
+    border-bottom:1px solid #edf2f7;
+}
+
+.news-item:last-child{
+    border-bottom:none;
+}
+
+.news-item h5{
+    font-size:17px;
+    margin-bottom:10px;
+    color:#111827;
+}
+
+.news-item p{
+    color:#64748b;
+    font-size:14px;
+    line-height:1.6;
+    margin-bottom:12px;
+}
+
+.news-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    font-size:13px;
+}
+
+.news-footer span{
+    color:#64748b;
+}
+
+.read-more-link{
+    color:#7c3aed;
+    font-weight:600;
+}
+
+.read-more-link:hover{
+    text-decoration:underline;
+}
+
+.placeholder-content{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100%;
+    color:#94a3b8;
+}
+
+/* ======================================================
+   EMPTY STATE
+====================================================== */
+
+.empty-state{
+    background:#fff;
+    border-radius:22px;
+    padding:80px 40px;
+    text-align:center;
+    border:1px solid #e9edf5;
+}
+
+.empty-state i{
+    font-size:70px;
+    color:#7c3aed;
+    margin-bottom:18px;
+}
+
+.empty-state h2{
+    margin-bottom:10px;
+}
+
+.empty-state p{
+    color:#64748b;
+}
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+
+@media(max-width:1100px){
+
+    .analysis-layout{
+        grid-template-columns:1fr;
+    }
+
+    .latest-news-card{
+        height:550px;
+    }
+
+    .below-chart-grid{
+        grid-template-columns:1fr;
+    }
+
+    .analysis-score-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:768px){
+
+    .analysis-hero{
+        flex-direction:column;
+    }
+
+    .hero-right{
+        width:100%;
+        align-items:flex-start;
+    }
+
+    .hero-grid{
+        grid-template-columns:1fr;
+    }
+
+    .analysis-score-grid{
+        grid-template-columns:1fr;
+    }
+
+    .analysis-grid-two{
+        grid-template-columns:1fr;
+    }
+
+    .target-grid{
+        grid-template-columns:1fr;
+    }
+
+}

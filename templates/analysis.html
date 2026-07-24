@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css') }}">
+{% endblock %}
+
 {% block title %}
 Stock Analysis
 {% endblock %}
@@ -104,9 +108,9 @@ Stock Analysis
             </div>
 
             <h2 class="
-            {% if stock.recommendation == 'BUY' %}
+            {% if ai.signal == 'BUY' %}
                 buy-signal
-            {% elif stock.recommendation == 'SELL' %}
+            {% elif ai.signal == 'SELL' %}
                 sell-signal
             {% else %}
                 hold-signal
@@ -618,18 +622,11 @@ Stock Analysis
     </div>
 
     {% endif %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            document.querySelectorAll("[data-width]").forEach(function (el) {
-
-                el.style.width = el.dataset.width + "%";
-
-            });
-
-        });
-    </script>
 
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
 {% endblock %}

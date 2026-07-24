@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -7,7 +12,6 @@
 <h2>Welcome back, {{ current_user.full_name }} 👋</h2>
 
 <p>Here's your AI-powered investment dashboard.</p>
-
 
 <div class="dashboard-grid">
 
@@ -387,74 +391,9 @@
 
     </div>
 </div>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
 
-        const analysisButton =
-            document.getElementById(
-                "viewAnalysisBtn"
-            );
+{% endblock %}
 
-        if (analysisButton) {
-
-            analysisButton.addEventListener(
-                "click",
-                function (event) {
-
-                    event.preventDefault();
-
-                    const stock =
-                        localStorage.getItem(
-                            "selectedStock"
-                        );
-
-                    if (!stock) {
-
-                        alert(
-                            "Please search a stock first."
-                        );
-
-                        return;
-
-                    }
-
-                    window.location.href =
-                        "/analysis?symbol=" +
-                        encodeURIComponent(stock);
-
-                }
-            );
-
-        }
-
-
-        window.addEventListener("load", function () {
-
-            const graph = document.querySelector(".js-plotly-plot");
-
-            if (graph) {
-
-                Plotly.relayout(graph, {
-                    height: 390
-                });
-
-            }
-
-        });
-
-
-
-        const progressBar = document.querySelector(".progress-fill");
-
-        if (progressBar) {
-
-            const confidence =
-                progressBar.dataset.confidence || "0%";
-
-            progressBar.style.width = confidence;
-
-        }
-
-    });
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

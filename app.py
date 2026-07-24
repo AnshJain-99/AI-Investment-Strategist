@@ -542,7 +542,7 @@ def analysis():
     symbol = request.args.get("symbol", "").strip()
 
     if not symbol:
-        return render_template("analysis.html", stock=None, chart=None, news=[])
+        return render_template("analysis.html", stock=None, chart=None, news=[], ai=None)
 
     # Get company information
 
@@ -557,6 +557,10 @@ def analysis():
     news = StockService.get_stock_news(symbol)
 
     ai = StockService.get_ai_analysis(symbol)
+
+    print("AI Analysis:", ai)
+
+
 
     return render_template(
         "analysis.html",

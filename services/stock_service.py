@@ -70,51 +70,50 @@ class StockService:
 
                 symbol = (
                     symbol.upper()
-                    +".NS"
+                    + ".NS"
                 )
 
             ticker = yf.Ticker(symbol)
 
             info = ticker.info
 
-
             # Day High
             day_high = format_number(
                 info.get("dayHigh")
             )
-            
+
             # Day Low
             day_low = format_number(
                 info.get("dayLow")
             )
-            
+
             # Volume
             def format_volume(value):
                 try:
                     value = int(value)
-            
+
                     if value >= 10000000:
                         return f"{value/10000000:.2f} Cr"
-            
+
                     elif value >= 100000:
                         return f"{value/100000:.2f} L"
-            
+
                     elif value >= 1000:
                         return f"{value/1000:.1f} K"
-            
+
                     return f"{value:,}"
-                
+
                 except (TypeError, ValueError):
                     return "N/A"
-            
+
             volume = format_volume(info.get("volume"))
-            
+
             # # Market State
             # market_state = (
             #     info.get("marketState")
             #     or "REGULAR"
             # )
-            
+
             # -------------------------------
             # CURRENT STOCK PRICE
             # -------------------------------
@@ -143,27 +142,27 @@ class StockService:
                 price = "N/A"
 
             history = ticker.history(period="5d")
-            
+
             price_change = "0.00%"
             price_change_value = 0
             price_change_color = "gray"
-            
+
             try:
                 if len(history) >= 2:
                     latest = float(history["Close"].iloc[-1])
                     previous = float(history["Close"].iloc[-2])
-            
+
                     change = latest - previous
                     percent = (change / previous) * 100
-            
+
                     price_change = f"{percent:+.2f}%"
                     price_change_value = round(percent, 2)
-            
+
                     if percent > 0:
                         price_change_color = "green"
                     elif percent < 0:
                         price_change_color = "red"
-            
+
             except Exception:
                 pass
 
@@ -222,7 +221,7 @@ class StockService:
                         info.get(
                             "marketCap"
                         )
-                    ),
+                ),
 
                 "pe":
                     format_number(
@@ -230,7 +229,7 @@ class StockService:
                         info.get(
                             "trailingPE"
                         )
-                    ),
+                ),
 
                 "eps":
                     format_number(
@@ -238,19 +237,19 @@ class StockService:
                         info.get(
                             "trailingEps"
                         )
-                    ),
+                ),
 
                 "sector":
                     info.get(
                         "sector",
                         "N / A"
-                    ),
+                ),
 
                 "industry":
                     info.get(
                         "industry",
                         "N / A"
-                    ),
+                ),
 
                 "revenue":
                     format_market_cap(
@@ -258,7 +257,7 @@ class StockService:
                         info.get(
                             "totalRevenue"
                         )
-                    ),
+                ),
 
                 "roe":
                     roe,
@@ -272,7 +271,7 @@ class StockService:
                         info.get(
                             "fullTimeEmployees"
                         )
-                    ),
+                ),
 
                 "high52":
                     format_number(
@@ -280,7 +279,7 @@ class StockService:
                         info.get(
                             "fiftyTwoWeekHigh"
                         )
-                    ),
+                ),
 
                 "low52":
                     format_number(
@@ -288,13 +287,13 @@ class StockService:
                         info.get(
                             "fiftyTwoWeekLow"
                         )
-                    ),
+                ),
 
                 "website":
                     info.get(
                         "website",
                         "N / A"
-                    )
+                )
             }
 
         except Exception as e:
@@ -581,7 +580,7 @@ class StockService:
 
                     visible=True,
 
-                    line=dict(color="#7C3AED",width=3),
+                    line=dict(color="#7C3AED", width=3),
 
 
                     fill="tozeroy",
@@ -906,7 +905,7 @@ class StockService:
 
                 symbol = (
                     symbol.upper()
-                    +".NS"
+                    + ".NS"
                 )
 
             ticker = yf.Ticker(symbol)
@@ -1118,6 +1117,191 @@ class StockService:
 
             return []
 
+    @staticmethod
+    def get_ai_analysis(symbol):
+
+        try:
+
+            if "." not in symbol:
+                symbol = symbol.upper() + ".NS"
+
+            ticker = yf.Ticker(symbol)
+
+            info = ticker.info
+
+            history = ticker.history(period="6mo")
+
+            if history.empty:
+                return None
+
+            close = history["Close"].dropna()
+
+            latest = float(close.iloc[-1])
+
+            sma20 = float(close.tail(20).mean())
+
+            sma50 = float(close.tail(50).mean())
+
+            # -----------------------------
+            # Technical Score
+            # -----------------------------
+
+            technical = 50
+
+            if latest > sma20:
+                technical += 15
+
+            if latest > sma50:
+                technical += 15
+
+            change = (
+                (latest - float(close.iloc[0])) / float(close.iloc[0])) * 100
+
+            if change > 15:
+                technical += 20
+
+            elif change > 5:
+                technical += 10
+
+            technical = min(100, technical)
+
+            # -----------------------------
+            # Fundamental Score
+            # -----------------------------
+
+            fundamental = 50
+
+            pe = info.get("trailingPE")
+
+            roe = info.get("returnOnEquity")
+
+            market_cap = info.get("marketCap")
+
+            if pe and pe < 30:
+                fundamental += 15
+
+            if roe and roe > 0.15:
+                fundamental += 20
+
+            if market_cap and market_cap > 100000000000:
+                fundamental += 15
+
+            fundamental = min(100, fundamental)
+
+            # -----------------------------
+            # Overall
+            # -----------------------------
+
+            overall = round(
+                (fundamental * 0.6) +
+                (technical * 0.4)
+            )
+
+            # -----------------------------
+            # Recommendation
+            # -----------------------------
+
+            if overall >= 80:
+
+                signal = "BUY"
+                
+
+            elif overall >= 60:
+
+                signal = "HOLD"
+
+            else:
+
+                signal = "SELL"
+
+            confidence = min(
+                95,
+                overall + 5
+            )
+            if signal == "BUY":
+
+                summary = "Strong financial performance with positive technical momentum. Suitable for medium to long-term investment."
+    
+                strengths = [
+                    "Healthy revenue growth",
+                    "Positive technical trend",
+                    "Strong market position"
+                ]
+            
+                risks = [
+                    "Short-term market volatility",
+                    "Sector correction risk"
+                ]
+    
+            elif signal == "HOLD":
+            
+                summary = "Company fundamentals remain stable but the current trend is neutral. Existing investors can continue holding."
+            
+                strengths = [
+                    "Stable business",
+                    "Balanced financials",
+                    "Long-term potential"
+                ]
+            
+                risks = [
+                    "Limited short-term upside",
+                    "Market uncertainty"
+                ]
+            
+            else:
+            
+                summary = "Weak momentum and below-average financial strength indicate elevated downside risk."
+            
+                strengths = [
+                    "Large market presence"
+                ]
+            
+                risks = [
+                    "Weak price trend",
+                    "Poor technical indicators",
+                    "High downside risk"
+                ]
+
+            return {
+
+                "overall": overall,
+                "fundamental": fundamental,
+                "technical": technical,
+            
+                "signal": signal,
+                "confidence": confidence,
+            
+                "summary": summary,
+                "strengths": strengths,
+                "risks": risks,
+            
+                "target": round(latest * 1.10, 2),
+                "stop_loss": round(latest * 0.92, 2),
+                "time_horizon": "6-12 Months"
+            }
+
+
+
+        except Exception as e:
+
+            print("AI Error:", e)
+
+            return {
+
+                "overall": 0,
+
+                "fundamental": 0,
+
+                "technical": 0,
+
+                "signal": "HOLD",
+
+                "confidence": 0
+
+                
+
+            }
+
 # ==================================================
 # HELPER FUNCTIONS
 # ==================================================
@@ -1187,4 +1371,78 @@ def format_integer(value):
     except Exception:
 
         return value
-    
+
+
+def generate_ai_summary(ai, stock):
+    summary = []
+
+    if ai["signal"] == "BUY":
+        summary.append(
+            f"{stock['name']} shows strong investment potential based on current market data."
+        )
+
+    elif ai["signal"] == "HOLD":
+        summary.append(
+            f"{stock['name']} is currently showing neutral signals."
+        )
+
+    else:
+        summary.append(
+            f"{stock['name']} is showing weak momentum."
+        )
+
+    if ai["fundamental"] >= 80:
+        summary.append("Fundamental indicators are healthy.")
+
+    elif ai["fundamental"] >= 60:
+        summary.append("Fundamentals are average.")
+
+    else:
+        summary.append("Fundamentals need improvement.")
+
+    if ai["technical"] >= 80:
+        summary.append("Technical momentum is positive.")
+
+    elif ai["technical"] >= 60:
+        summary.append("Technical trend is neutral.")
+
+    else:
+        summary.append("Technical trend remains weak.")
+
+    strengths = []
+
+    if stock["pe"] != "N/A" and float(stock["pe"]) < 25:
+        strengths.append("Attractive valuation")
+
+    if ai["technical"] >= 75:
+        strengths.append("Positive momentum")
+
+    if ai["fundamental"] >= 80:
+        strengths.append("Strong fundamentals")
+
+    risks = []
+
+    if stock["roe"] == "N/A":
+        risks.append("ROE data unavailable")
+
+    elif float(stock["roe"].replace("%", "")) < 10:
+        risks.append("Low return on equity")
+
+    if ai["technical"] < 60:
+        risks.append("Weak momentum")
+
+    if ai["overall"] >= 85:
+        risk = "Low"
+
+    elif ai["overall"] >= 70:
+        risk = "Medium"
+
+    else:
+        risk = "High"
+
+    return {
+        "summary": " ".join(summary),
+        "strengths": strengths,
+        "risks": risks,
+        "risk": risk
+    }

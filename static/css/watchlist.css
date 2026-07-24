@@ -1,0 +1,229 @@
+.watchlist-page{
+    padding:30px;
+}
+
+.watchlist-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.watchlist-header h2{
+    font-size:2rem;
+    font-weight:700;
+    margin:0;
+}
+
+.watchlist-header p{
+    color:#6c757d;
+    margin-top:6px;
+}
+
+.watchlist-add-btn{
+    border-radius:12px;
+    padding:12px 24px;
+    font-weight:600;
+}
+
+.watchlist-search{
+    position:relative;
+    margin-bottom:30px;
+}
+
+.watchlist-search i{
+    position:absolute;
+    top:50%;
+    left:18px;
+    transform:translateY(-50%);
+    color:#888;
+}
+
+.watchlist-search input{
+    width:100%;
+    border:none;
+    outline:none;
+    padding:16px 20px 16px 48px;
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+
+.watchlist-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    gap:24px;
+}
+
+.watchlist-card{
+    background:#fff;
+    border-radius:18px;
+    padding:24px;
+    box-shadow:0 12px 25px rgba(0,0,0,.08);
+    transition:.3s;
+}
+
+.watchlist-card:hover{
+    transform:translateY(-6px);
+}
+
+.stock-top{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.stock-avatar{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#0d6efd,#4f8cff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:24px;
+    font-weight:700;
+}
+
+.stock-symbol{
+    margin:0;
+    font-size:25px;
+    font-weight:700;
+}
+
+.company-name{
+    font-size:15px;
+    color:#6b7280;
+    margin-top:2px;
+    display:block;
+}
+
+.stock-middle{
+    margin:25px 0;
+}
+
+.stock-price{
+    font-size:28px;
+    font-weight:650;
+    margin-top:10px;
+    letter-spacing:-1px;
+}
+.stock-change{
+    margin-top:8px;
+    font-size:16px;
+    font-weight:600;
+    background:none !important;
+    display:inline-block;
+    padding:0;
+}
+.stock-bottom{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.stock-bottom .btn{
+    flex:1;
+    border-radius:10px;
+}
+
+.watchlist-empty{
+    grid-column:1/-1;
+    text-align:center;
+    background:#fff;
+    border-radius:18px;
+    padding:80px 20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+.watchlist-empty i{
+    font-size:70px;
+    color:#0d6efd;
+    margin-bottom:15px;
+}
+
+.stock-results{
+    margin-top:15px;
+    max-height:350px;
+    overflow-y:auto;
+}
+
+.search-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px;
+    border-bottom:1px solid #eee;
+}
+
+.search-item:hover{
+    background:#f8f9fa;
+}
+
+.search-item strong{
+    display:block;
+}
+
+.search-item small{
+    color:#666;
+}
+
+.green{
+    color:#16a34a;
+    font-weight:600;
+}
+
+.red{
+    color:#dc2626;
+    font-weight:600;
+}
+.stock-meta{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:18px 0;
+
+    border-top:1px solid #ececec;
+
+    padding-top:12px;
+
+}
+
+.stock-meta small{
+
+    display:block;
+
+    color:#888;
+
+    font-size:12px;
+
+}
+
+.stock-meta strong{
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+@media(max-width:768px){
+
+    .watchlist-page{
+        padding:20px;
+    }
+
+    .watchlist-grid{
+        grid-template-columns:1fr;
+    }
+
+    .stock-bottom{
+        flex-direction:column;
+    }
+
+}

@@ -73,7 +73,7 @@ Stock Analysis
                     <strong>{{ stock.volume }}</strong>
                 </div>
 
-                
+
 
             </div>
 
@@ -113,7 +113,7 @@ Stock Analysis
             {% endif %}
         ">
 
-                {{ stock.recommendation or "HOLD" }}
+                {{ ai.signal }}
 
             </h2>
 
@@ -123,7 +123,7 @@ Stock Analysis
 
                 <strong>
 
-                    {{ stock.confidence or "78%" }}
+                    {{ ai.confidence }}%
 
                 </strong>
 
@@ -138,8 +138,7 @@ Stock Analysis
 
             <div class="confidence-progress">
 
-                <div class="confidence-fill" style="width:78%;">
-
+                <div class="confidence-fill" data-width="{{ ai.confidence }}">
                 </div>
 
             </div>
@@ -167,18 +166,36 @@ Stock Analysis
 
             <div class="overall-score-circle">
 
-                84
+                {{ ai.overall }}
 
             </div>
 
             <small>
 
+                {% if ai.overall >= 85 %}
                 Excellent
+
+                {% elif ai.overall >=70 %}
+                Good
+
+                {% else %}
+                Average
+
+                {% endif %}
 
             </small>
             <div class="score-description">
 
-                Strong Company
+                {% if ai.signal=="BUY" %}
+                Strong Buy Candidate
+
+                {% elif ai.signal=="SELL" %}
+                Weak Trend
+
+                {% else %}
+                Stable Company
+
+                {% endif %}
 
             </div>
 
@@ -203,18 +220,28 @@ Stock Analysis
 
             <strong>
 
-                91%
+                {{ ai.fundamental }}%
 
             </strong>
             <p class="metric-info">
 
+                {% if ai.fundamental >=85 %}
                 Excellent Financial Health
+
+                {% elif ai.fundamental>=70 %}
+                Healthy Fundamentals
+
+                {% else %}
+                Weak Fundamentals
+
+                {% endif %}
 
             </p>
 
             <div class="mini-progress">
 
-                <div class="mini-progress-fill" style="width:91%;"></div>
+                <div class="mini-progress-fill" data-width="{{ ai.fundamental }}">
+                </div>
 
             </div>
 
@@ -233,18 +260,27 @@ Stock Analysis
 
             <strong>
 
-                76%
+                {{ ai.technical }}%
 
             </strong>
             <p class="metric-info">
 
+                {% if ai.technical>=85 %}
+                Strong Bullish Momentum
+
+                {% elif ai.technical>=70 %}
                 Positive Momentum
+
+                {% else %}
+                Weak Momentum
+
+                {% endif %}
 
             </p>
 
             <div class="mini-progress">
-
-                <div class="mini-progress-fill" style="width:76%;"></div>
+                <div class="mini-progress-fill" data-width="{{ ai.technical }}">
+                </div>
 
             </div>
 
@@ -386,11 +422,101 @@ Stock Analysis
 
                 <div class="ai-card recommendation-card">
 
-                    <h4>AI Recommendation</h4>
+                    <div class="recommendation-header">
 
-                    <div class="placeholder-content">
+                        <h4>AI Recommendation</h4>
 
-                        Groq AI Analysis will be added here.
+                        <div class="signal-badge
+        {% if ai.signal=='BUY' %}
+            signal-buy
+        {% elif ai.signal=='SELL' %}
+            signal-sell
+        {% else %}
+            signal-hold
+        {% endif %}">
+                            {{ ai.signal }}
+                        </div>
+
+                    </div>
+
+                    <div class="confidence-row">
+
+                        <span>Confidence</span>
+
+                        <strong>{{ ai.confidence }}%</strong>
+
+                    </div>
+
+                    <div class="confidence-progress">
+
+                        <div class="confidence-fill" data-width="{{ ai.confidence }}">
+                        </div>
+
+                    </div>
+
+                    <div class="ai-summary">
+
+                        {{ ai.summary }}
+
+                    </div>
+
+                    <div class="analysis-grid-two">
+
+                        <div class="analysis-section">
+
+                            <h5>✔ Strengths</h5>
+
+                            <ul>
+
+                                {% for s in ai.strengths %}
+                                <li>{{ s }}</li>
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                        <div class="analysis-section">
+
+                            <h5>⚠ Risks</h5>
+
+                            <ul>
+
+                                {% for r in ai.risks %}
+                                <li>{{ r }}</li>
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                    <div class="target-grid">
+
+                        <div class="target-box">
+
+                            <small>🎯 Target</small>
+
+                            <strong>₹{{ ai.target }}</strong>
+
+                        </div>
+
+                        <div class="target-box">
+
+                            <small>🛑 Stop Loss</small>
+
+                            <strong>₹{{ ai.stop_loss }}</strong>
+
+                        </div>
+
+                        <div class="target-box">
+
+                            <small>⏳ Horizon</small>
+
+                            <strong>{{ ai.time_horizon }}</strong>
+
+                        </div>
 
                     </div>
 
@@ -492,6 +618,17 @@ Stock Analysis
     </div>
 
     {% endif %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            document.querySelectorAll("[data-width]").forEach(function (el) {
+
+                el.style.width = el.dataset.width + "%";
+
+            });
+
+        });
+    </script>
 
 </div>
 

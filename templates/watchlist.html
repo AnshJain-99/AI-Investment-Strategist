@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}My Watchlist{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/watchlist.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="watchlist-page">
+
+    <!-- Header -->
+    <div class="watchlist-header">
+
+        <div>
+
+            <h2>⭐ My Watchlist</h2>
+
+            <p>Track your favourite investments in one place.</p>
+
+        </div>
+
+        <button class="btn btn-primary watchlist-add-btn" data-bs-toggle="modal" data-bs-target="#addStockModal">
+
+            <i class="bi bi-plus-lg"></i>
+
+            Add Stock
+
+        </button>
+
+    </div>
+
+    <!-- Search -->
+
+    <div class="watchlist-search">
+
+        <i class="bi bi-search"></i>
+
+        <input type="text" id="watchlistSearch" placeholder="Search your watchlist...">
+
+    </div>
+
+    <!-- Cards -->
+
+    <div class="watchlist-grid" id="watchlistGrid">
+
+        {% if stocks %}
+
+        {% for stock in stocks %}
+
+        <div class="watchlist-card" data-symbol="{{ stock.symbol }}">
+
+            <div class="stock-top">
+
+                <div class="stock-avatar">
+
+                    {{ stock.symbol[0] }}
+
+                </div>
+
+                <div class="stock-details">
+
+                    <h5 class="stock-symbol">
+
+                        {{ stock.symbol }}
+
+                    </h5>
+
+                    <span class="company-name" id="company-{{ stock.symbol }}">
+
+                        Loading company...
+
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="stock-middle">
+
+                <div class="stock-price" id="price-{{ stock.symbol }}">
+                    --
+                </div>
+
+                <div class="stock-change" id="change-{{ stock.symbol }}">
+                    Loading...
+                </div>
+
+                <div class="stock-meta">
+
+                    <div>
+                        <small>Market Cap</small>
+                        <strong id="marketcap-{{ stock.symbol }}">--</strong>
+                    </div>
+
+                    <div>
+                        <small>P/E</small>
+                        <strong id="pe-{{ stock.symbol }}">--</strong>
+                    </div>
+
+                </div>
+
+                <div class="stock-meta">
+
+                    <div>
+                        <small>52W High</small>
+                        <strong id="high-{{ stock.symbol }}">--</strong>
+                    </div>
+
+                    <div>
+                        <small>52W Low</small>
+                        <strong id="low-{{ stock.symbol }}">--</strong>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="stock-bottom">
+
+                <a href="{{ url_for('analysis') }}?symbol={{ stock.symbol }}" class="btn btn-outline-primary">
+
+                    <i class="bi bi-graph-up"></i>
+
+                    Analysis
+
+                </a>
+
+                <button class="btn btn-outline-danger remove-stock" data-symbol="{{ stock.symbol }}">
+
+                    <i class="bi bi-trash"></i>
+
+                    Remove
+
+                </button>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+        {% else %}
+
+        <div class="watchlist-empty">
+
+            <i class="bi bi-stars"></i>
+
+            <h3>No Stocks Yet</h3>
+
+            <p>
+
+                Add your favourite stocks to build your watchlist.
+
+            </p>
+
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
+
+                Add First Stock
+
+            </button>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- Modal -->
+
+<div class="modal fade" id="addStockModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+
+                    Add Stock
+
+                </h5>
+
+                <button class="btn-close" data-bs-dismiss="modal">
+
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="search-wrapper">
+
+                    <input class="form-control" id="stockSearchInput" placeholder="Search stock...">
+
+                </div>
+
+                <div id="stockResults" class="stock-results">
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/watchlist.js') }}"></script>
+{% endblock %}

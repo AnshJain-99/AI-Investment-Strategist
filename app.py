@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 import yfinance as yf
 # from datetime import datetime
 import feedparser
+from database.models import db, User, Watchlist
+from flask import request, jsonify
+from flask import jsonify
 
 
 from flask_bcrypt import Bcrypt
@@ -80,7 +83,8 @@ def login():
 
         password = request.form["password"]
 
-        user = db.session.execute( db.select(User).filter_by(email=email)).scalar_one_or_none()
+        user = db.session.execute(db.select(User).filter_by(
+            email=email)).scalar_one_or_none()
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
@@ -125,7 +129,8 @@ def register():
         # CHECK EXISTING EMAIL
         # ------------------------------
 
-        existing = db.session.execute(db.select(User).filter_by(email=email)).scalar_one_or_none()
+        existing = db.session.execute(
+            db.select(User).filter_by(email=email)).scalar_one_or_none()
 
         if existing:
             flash("Email already exists", "danger")
@@ -175,7 +180,6 @@ def dashboard():
     # Get interactive market chart
     market_chart = StockService.get_market_chart()
 
-
     # ==========================================
     # DYNAMIC AI MARKET RECOMMENDATION
     # ==========================================
@@ -198,7 +202,6 @@ def dashboard():
             "Close"
         ].dropna()
 
-
         # Minimum 20 trading days required
         if len(nifty_close) >= 20:
 
@@ -210,7 +213,6 @@ def dashboard():
                 nifty_close.iloc[-20].item()
             )
 
-
             # Calculate NIFTY 20-day return
             market_return = (
                 (
@@ -219,7 +221,6 @@ def dashboard():
                 )
                 / price_20_days_ago
             ) * 100
-
 
             # ==================================
             # BUY SIGNAL
@@ -236,7 +237,6 @@ def dashboard():
                         + market_return * 3
                     ),
                 )
-
 
             # ==================================
             # SELL SIGNAL
@@ -256,7 +256,6 @@ def dashboard():
                     ),
                 )
 
-
             # ==================================
             # HOLD SIGNAL
             # ==================================
@@ -275,7 +274,6 @@ def dashboard():
                     ) * 5
                 )
 
-
             # Show result in terminal
             print(
                 "NIFTY 20-day return:",
@@ -292,14 +290,12 @@ def dashboard():
                 confidence,
             )
 
-
     except Exception as error:
 
         print(
             "AI recommendation error:",
             error,
         )
-
 
     # ==========================================
     # DASHBOARD CARD INFORMATION
@@ -335,13 +331,11 @@ def dashboard():
 
     }
 
-
     # ==========================================
     # LIVE INDIAN STOCK MARKET NEWS
     # ==========================================
 
     market_news = []
-
 
     try:
 
@@ -360,7 +354,6 @@ def dashboard():
             "&ceid=IN:en"
 
         )
-
 
         # Get latest five news articles
         for article in (
@@ -417,14 +410,12 @@ def dashboard():
 
             )
 
-
     except Exception as error:
 
         print(
             "Market news error:",
             error,
         )
-
 
     # ==========================================
     # SEND DATA TO DASHBOARD
@@ -444,6 +435,7 @@ def dashboard():
 # ==================================================
 # DYNAMIC STOCK SEARCH API
 # ==================================================
+
 
 @app.route("/api/search-stocks")
 @login_required
@@ -498,7 +490,8 @@ def stock_search():
             if not symbol:
                 continue
 
-            company_name = stock.get("longname") or stock.get("shortname") or symbol
+            company_name = stock.get("longname") or stock.get(
+                "shortname") or symbol
 
             exchange = stock.get("exchDisp") or stock.get("exchange", "")
 
@@ -526,7 +519,8 @@ def stock_search():
         # SHOW INDIAN NSE RESULTS FIRST
         # ------------------------------------------
 
-        suggestions.sort(key=lambda item: 0 if item["symbol"].endswith(".NS") else 1)
+        suggestions.sort(
+            key=lambda item: 0 if item["symbol"].endswith(".NS") else 1)
 
         return jsonify(suggestions[:8])
 
@@ -562,7 +556,16 @@ def analysis():
 
     news = StockService.get_stock_news(symbol)
 
-    return render_template("analysis.html", stock=stock, chart=chart, news=news)
+    ai = StockService.get_ai_analysis(symbol)
+
+    return render_template(
+        "analysis.html",
+        stock=stock,
+        chart=chart,
+        news=news,
+        ai=ai
+
+    )
 
 
 # ==================================================
@@ -607,7 +610,8 @@ def forgot_password():
         # CHECK USER
         # ------------------------------
 
-        user = db.session.execute(db.select(User).filter_by(email=email)).scalar_one_or_none()
+        user = db.session.execute(db.select(User).filter_by(
+            email=email)).scalar_one_or_none()
 
         if not user:
             flash("Email not found!", "danger")
@@ -618,7 +622,8 @@ def forgot_password():
         # CREATE NEW PASSWORD HASH
         # ------------------------------
 
-        hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+        hashed_password = bcrypt.generate_password_hash(
+            password).decode("utf-8")
 
         # ------------------------------
         # UPDATE PASSWORD
@@ -816,9 +821,148 @@ def compare_results():
     )
 
 
+@app.route("/watchlist")
+@login_required
+def watchlist():
+
+    stocks = Watchlist.query.filter_by(
+        user_id=current_user.id
+    ).all()
+
+    return render_template(
+        "watchlist.html",
+        stocks=stocks
+    )
+
+
+@app.route("/watchlist/add", methods=["POST"])
+@login_required
+def add_to_watchlist():
+
+    data = request.get_json()
+
+    symbol = data.get("symbol", "").upper()
+
+    if not symbol:
+        return jsonify({
+            "success": False,
+            "message": "Invalid symbol"
+        }), 400
+
+    exists = Watchlist.query.filter_by(
+        user_id=current_user.id,
+        symbol=symbol
+    ).first()
+
+    if exists:
+        return jsonify({
+            "success": False,
+            "message": "Already added"
+        })
+
+    stock = Watchlist(
+        user_id=current_user.id,
+        symbol=symbol
+    )
+
+    db.session.add(stock)
+    db.session.commit()
+
+    return jsonify({
+        "success": True
+    })
+
+
+@app.route("/watchlist/remove", methods=["POST"])
+@login_required
+def remove_from_watchlist():
+
+    data = request.get_json()
+
+    symbol = data.get("symbol")
+
+    stock = Watchlist.query.filter_by(
+        user_id=current_user.id,
+        symbol=symbol
+    ).first()
+
+    if stock:
+
+        db.session.delete(stock)
+        db.session.commit()
+
+    return jsonify({
+        "success": True
+    })
+
+
+@app.route("/api/stock-live/<symbol>")
+@login_required
+def stock_live(symbol):
+
+    try:
+
+        stock = yf.Ticker(symbol)
+
+        info = stock.info
+
+        history = stock.history(period="5d")
+
+        history = history.dropna(subset=["Close"])
+
+        if history.empty:
+            raise Exception("No price data")
+
+        current = float(history["Close"].iloc[-1])
+
+        previous = (float(history["Close"].iloc[-2])if len(history) >= 2 else current)
+
+       
+
+        change = round(((current - previous) / previous) * 100, 2)
+
+        return jsonify({
+
+            "company": info.get("longName", symbol),
+
+            "price": f"{current:,.2f}",
+
+            "change": change,
+
+            "market_cap": info.get("marketCap"),
+
+            "pe": info.get("trailingPE"),
+
+            "high52": info.get("fiftyTwoWeekHigh"),
+
+            "low52": info.get("fiftyTwoWeekLow")
+
+        })
+
+    except:
+
+        return jsonify({
+
+            "company": symbol,
+
+            "price": "--",
+
+            "change": 0,
+
+            "market_cap": "--",
+
+            "pe": "--",
+
+            "high52": "--",
+
+            "low52": "--"
+
+        })
+
 # ==================================================
 # RUN APPLICATION
 # ==================================================
+
 
 if __name__ == "__main__":
     app.run(debug=True)

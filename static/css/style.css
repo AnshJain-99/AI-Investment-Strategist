@@ -973,15 +973,23 @@ Dashboard Layout
 
 .below-chart-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 320px 1fr;
     gap: 24px;
     margin-top: 24px;
+    align-items: stretch;
 }
 
-.company-card,
-.recommendation-card {
-    min-height: 210px;
-    height: 100%;
+.company-card{
+    width:100%;
+}
+
+.recommendation-card{
+    width:100%;
+    height:100%;
+    min-height:420px;
+
+    display:flex;
+    flex-direction:column;
 }
 
 .latest-news-card {
@@ -4754,4 +4762,178 @@ NEW AI CARD
 
 .market-news-list::-webkit-scrollbar-track{
     background:transparent;
+}
+.recommendation-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.signal-badge{
+
+padding:8px 18px;
+
+border-radius:30px;
+
+font-weight:700;
+
+font-size:13px;
+
+color:white;
+
+}
+
+.signal-buy{
+
+background:#16a34a;
+
+}
+
+.signal-hold{
+
+background:#f59e0b;
+
+}
+
+.signal-sell{
+
+background:#ef4444;
+
+}
+
+.confidence-row{
+
+display:flex;
+
+justify-content:space-between;
+
+margin-bottom:12px;
+
+font-weight:600;
+
+}
+
+.ai-summary{
+
+background:#F8F5FF;
+
+padding:16px;
+
+border-left:4px solid #7C3AED;
+
+border-radius:14px;
+
+margin:20px 0;
+
+line-height:1.7;
+
+color:#444;
+
+}
+
+.analysis-section{
+
+margin-top:20px;
+
+}
+
+.analysis-section h5{
+
+font-size:17px;
+
+margin-bottom:10px;
+
+}
+
+.analysis-section ul{
+
+padding-left:18px;
+
+}
+
+.analysis-section li{
+
+margin-bottom:8px;
+
+line-height:1.6;
+
+}
+
+.target-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-top:auto;
+}
+
+.target-box{
+
+background:#F8F8FC;
+
+padding:15px;
+
+border-radius:14px;
+
+text-align:center;
+
+border:1px solid #ECECEC;
+
+}
+
+.target-box small{
+
+display:block;
+
+margin-bottom:6px;
+
+color:#777;
+
+}
+
+.target-box strong{
+
+font-size:18px;
+
+color:#6D28D9;
+
+}
+.analysis-grid-two{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:30px;
+    margin-top:20px;
+}
+
+.analysis-section{
+
+margin:0;
+
+}
+
+.analysis-section h5{
+
+margin-bottom:12px;
+
+font-size:17px;
+
+font-weight:700;
+
+}
+
+.analysis-section ul{
+
+padding-left:18px;
+
+margin:0;
+
+}
+
+.analysis-section li{
+
+margin-bottom:10px;
+
+line-height:1.5;
+
+font-size:15px;
+
 }

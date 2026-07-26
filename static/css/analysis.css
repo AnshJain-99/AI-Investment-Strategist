@@ -17,7 +17,7 @@
     justify-content:space-between;
     align-items:flex-start;
     gap:30px;
-    background:#fff;
+    background:#ffffff;
     border:1px solid #e8ebf2;
     border-radius:24px;
     padding:32px;
@@ -112,6 +112,7 @@
     font-size:18px;
     color:#111827;
 }
+
 
 .hero-live{
     display:flex;
@@ -722,3 +723,84 @@
     }
 
 }
+
+
+.ai-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.ai-section-label {
+    display: block;
+    color: #7a8193;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.ai-card-header h4 {
+    color: #111827;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ai-status-icon {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7c3aed;
+    background: #f1eafe;
+    border-radius: 13px;
+    font-size: 21px;
+}
+
+
+/* Signal and confidence */
+
+.ai-signal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.ai-small-label {
+    display: block;
+    color: #7a8193;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.ai-signal {
+    display: inline-block;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    padding: 6px 16px;
+    border-radius: 11px;
+    line-height: 1;
+}
+
+
+/* Dynamic signal colors */
+
+.buy-signal {
+    color: #059669;
+    background: #ecfdf5;
+}
+
+.hold-signal {
+    color: #d97706;
+    background: #fff7e6;
+}
+
+.sell-signal {
+    color: #dc2626;
+    background: #fef2f2;
+}
+

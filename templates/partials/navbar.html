@@ -31,27 +31,34 @@
 
         <!-- NAVIGATION LINKS -->
 
-        <nav class="top-nav-links">
+        <nav class="top-nav-links" id="topNavLinks">
 
-            <a href="/dashboard" class="top-nav-item active">
-
+            <a href="/dashboard"
+               class="top-nav-item{% if request.path == '/dashboard' %} active{% endif %}"
+               id="nav-dashboard">
                 Dashboard
-
             </a>
 
-            <a href="/dashboard#market" class="top-nav-item">
-
+            <a href="/dashboard#market"
+               class="top-nav-item{% if request.path == '/dashboard' and request.args.get('section') == 'market' %} active{% endif %}"
+               id="nav-market">
                 Market
-
             </a>
 
-            <a href="{{ url_for('compare') }}" class="top-nav-item">
+            <a href="{{ url_for('compare') }}"
+               class="top-nav-item{% if request.path == url_for('compare') %} active{% endif %}"
+               id="nav-compare">
                 Compare Stocks
             </a>
-            <a href="{{ url_for('watchlist') }}" class="top-nav-item">
-                
+
+            <a href="{{ url_for('watchlist') }}"
+               class="top-nav-item{% if request.path == url_for('watchlist') %} active{% endif %}"
+               id="nav-watchlist">
                 Watchlist
             </a>
+
+            <!-- Sliding underline indicator -->
+            <span class="nav-slider" id="navSlider"></span>
 
         </nav>
 
@@ -271,6 +278,65 @@
 
         }
 
+
+        /* ======================================
+           SLIDING NAV INDICATOR
+        ====================================== */
+
+        (function () {
+
+            const slider  = document.getElementById("navSlider");
+            const navLinks = document.querySelectorAll(".top-nav-links .top-nav-item");
+
+            if (!slider || !navLinks.length) return;
+
+            /* Move slider to a given element */
+            function moveSlider(el) {
+
+                const navRect = document.getElementById("topNavLinks").getBoundingClientRect();
+                const elRect  = el.getBoundingClientRect();
+
+                slider.style.left  = (elRect.left - navRect.left + 13) + "px";
+                slider.style.width = (elRect.width - 26) + "px";
+                slider.style.opacity = "1";
+
+            }
+
+            /* Position on the server-set active link immediately (no animation) */
+            const initialActive = document.querySelector(".top-nav-links .top-nav-item.active");
+
+            if (initialActive) {
+
+                slider.style.transition = "none";
+                moveSlider(initialActive);
+
+                /* Re-enable animation after first paint */
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        slider.style.transition = "left 0.3s cubic-bezier(.4,0,.2,1), width 0.3s cubic-bezier(.4,0,.2,1), opacity 0.2s";
+                    });
+                });
+
+            } else {
+
+                slider.style.opacity = "0";
+
+            }
+
+            /* On click: move active class + slider */
+            navLinks.forEach(function (link) {
+
+                link.addEventListener("click", function () {
+
+                    navLinks.forEach(function (l) { l.classList.remove("active"); });
+                    link.classList.add("active");
+                    moveSlider(link);
+
+                });
+
+            });
+
+        })();
 
 
         /* ======================================

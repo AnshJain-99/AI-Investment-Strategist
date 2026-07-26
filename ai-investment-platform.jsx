@@ -719,18 +719,20 @@ export default function App() {
       <h2 style={{ fontSize: 20, fontWeight: 800 }}>🔔 Alerts</h2>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
         {[
-          { type: "Price Alert", icon: "💰", desc: "INFY crosses ₹1,900", active: true, color: "#22C55E" },
-          { type: "AI Alert", icon: "🤖", desc: "Strong buy signal on HDFCBANK", active: true, color: "#2563EB" },
-          { type: "Risk Alert", icon: "⚠️", desc: "Portfolio VaR exceeded threshold", active: false, color: "#EF4444" },
-          { type: "News Alert", icon: "📰", desc: "Negative news for ADANIPORTS", active: true, color: "#F59E0B" },
-          { type: "Volume Alert", icon: "📊", desc: "TCS volume 3x average", active: false, color: "#8B5CF6" },
-          { type: "Email/SMS", icon: "📱", desc: "Configure delivery channels", active: true, color: "#EC4899" },
+          { type: "Price Alerts", icon: "💰", desc: "INFY crosses ₹1,900", priorityStars: 5, active: true, color: "#22C55E" },
+          { type: "AI Recommendation Changes", icon: "🤖", desc: "HDFCBANK recommendation changed to Strong Buy", priorityStars: 5, active: true, color: "#2563EB" },
+          { type: "Market News Alerts", icon: "📰", desc: "Negative news for ADANIPORTS", priorityStars: 4, active: true, color: "#F59E0B" },
+          { type: "Watchlist Movement Alerts", icon: "👁️", desc: "TITAN moved +3.2% — watchlisted", priorityStars: 4, active: false, color: "#8B5CF6" },
+          { type: "Portfolio Notifications (after portfolio feature)", icon: "💼", desc: "Portfolio feature coming — notifications when enabled", priorityStars: 3, active: false, color: "#EC4899" },
         ].map((a, i) => (
           <div key={i} className="glass-card card-hover" style={{ padding: 20 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: `${a.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: `1px solid ${a.color}33` }}>{a.icon}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{a.type}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{a.type}</div>
+                  <div style={{ fontSize: 12, color: "#FBBF24", fontWeight: 700 }}>{'⭐'.repeat(a.priorityStars)}</div>
+                </div>
                 <div style={{ fontSize: 13, color: "#94A3B8", marginBottom: 12 }}>{a.desc}</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {["Email", "SMS", "Push"].map(ch => (

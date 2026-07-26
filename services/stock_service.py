@@ -502,13 +502,33 @@ class StockService:
     # DASHBOARD MARKET CHART
     # ==================================================
 
+    # Helper – compute ISO date strings for timeline buttons
+
+    @staticmethod
+    def _range_ago(days):
+
+        from datetime import datetime, timedelta
+
+        end = datetime.today()
+
+        start = end - timedelta(days=days)
+
+        return (
+
+            start.strftime("%Y-%m-%d"),
+
+            end.strftime("%Y-%m-%d")
+
+        )
+
     @staticmethod
     def get_market_chart():
 
         try:
 
-            # Download 6-month historical data
+            # Download 2-year historical data
             # for NIFTY 50 and SENSEX
+            # (keeps enough data for all timeline views)
 
             market_data = yf.download(
 
@@ -517,7 +537,7 @@ class StockService:
                     "^BSESN"
                 ],
 
-                period="6mo",
+                period="2y",
 
                 interval="1d",
 
@@ -752,9 +772,11 @@ class StockService:
 
                 ),
 
-                # NIFTY / SENSEX buttons
+                # NIFTY / SENSEX toggle  +  Timeline buttons
 
                 updatemenus=[
+
+                    # ---- NIFTY / SENSEX ----
 
                     dict(
 
@@ -841,6 +863,148 @@ class StockService:
                                         "yaxis.title":
 
                                         ""
+
+                                    }
+
+                                ]
+
+                            )
+
+                        ]
+
+                    ),
+
+                    # ---- TIMELINE BUTTONS (Day / Week / Month / Year) ----
+
+                    dict(
+
+                        type="buttons",
+
+                        direction="right",
+
+                        x=0,
+
+                        xanchor="left",
+
+                        y=1.16,
+
+                        yanchor="top",
+
+                        showactive=True,
+
+                        bgcolor="#F5F3FF",
+
+                        bordercolor="#DDD6FE",
+
+                        font=dict(
+
+                            color="#6D28D9",
+
+                            size=11
+
+                        ),
+
+                        pad=dict(r=4, t=0),
+
+                        buttons=[
+
+                            dict(
+
+                                label="1D",
+
+                                method="relayout",
+
+                                args=[
+
+                                    {
+
+                                        "xaxis.range":
+
+                                        list(
+                                            StockService._range_ago(1)
+                                        ),
+
+                                        "xaxis.autorange":
+
+                                        False
+
+                                    }
+
+                                ]
+
+                            ),
+
+                            dict(
+
+                                label="1W",
+
+                                method="relayout",
+
+                                args=[
+
+                                    {
+
+                                        "xaxis.range":
+
+                                        list(
+                                            StockService._range_ago(7)
+                                        ),
+
+                                        "xaxis.autorange":
+
+                                        False
+
+                                    }
+
+                                ]
+
+                            ),
+
+                            dict(
+
+                                label="1M",
+
+                                method="relayout",
+
+                                args=[
+
+                                    {
+
+                                        "xaxis.range":
+
+                                        list(
+                                            StockService._range_ago(30)
+                                        ),
+
+                                        "xaxis.autorange":
+
+                                        False
+
+                                    }
+
+                                ]
+
+                            ),
+
+                            dict(
+
+                                label="1Y",
+
+                                method="relayout",
+
+                                args=[
+
+                                    {
+
+                                        "xaxis.range":
+
+                                        list(
+                                            StockService._range_ago(365)
+                                        ),
+
+                                        "xaxis.autorange":
+
+                                        False
 
                                     }
 

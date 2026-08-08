@@ -14,12 +14,14 @@
 
     padding: 0 38px;
 
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 
     border-bottom: 1px solid #ececf2;
 
     box-shadow:
-        0 2px 12px rgba(15, 23, 42, 0.04);
+        0 12px 28px rgba(15, 23, 42, 0.06);
 }
 .navbar-left {
     display: flex;
@@ -123,11 +125,13 @@
 
     transition:
         color 0.2s ease,
-        background 0.2s ease;
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 .top-nav-item:hover {
     color: #7c3aed;
+    transform: translateY(-1px);
 }
 
 .top-nav-item.active {
@@ -151,6 +155,19 @@
         4px 4px 0 0;
 
     background: #7c3aed;
+    animation: navUnderlineSlide 0.26s ease both;
+}
+
+@keyframes navUnderlineSlide {
+    from {
+        opacity: 0;
+        transform: scaleX(0.45);
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
 }
 .navbar-search-wrapper {
     position: relative;
@@ -184,7 +201,9 @@
 }
 
 .navbar-search-form:focus-within {
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 
     border-color: #8b5cf6;
 
@@ -238,7 +257,9 @@
     overflow-y: auto;
     overflow-x: hidden;
 
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 
     border: 1px solid #e6e7ec;
 

@@ -1,17 +1,31 @@
 {% extends "base.html" %}
 
 {% block styles %}
-<link rel="stylesheet"
-      href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
 
+<div class="dashboard-page">
+
 <h2>Welcome back, {{ current_user.full_name }} 👋</h2>
 
-<p>Here's your AI-powered investment dashboard.</p>
+<p>Here's your live investment dashboard.</p>
+
+<div class="dashboard-heading">
+    <div>
+        <span class="dashboard-kicker">Investment Overview</span>
+        <h1>Welcome back, {{ current_user.full_name }}</h1>
+        <p>Here's your live investment dashboard.</p>
+    </div>
+
+    <a href="{{ url_for('watchlist') }}" class="dashboard-heading-action">
+        <i class="bi bi-bookmark-star"></i>
+        Watchlist
+    </a>
+</div>
 
 <div class="dashboard-grid">
 
@@ -61,7 +75,7 @@
 
     <div class="stat-card">
 
-        <div class="card-icon orange">
+        <div class="card-icon purple-dark">
             <i class="bi bi-bar-chart-line"></i>
         </div>
 
@@ -77,30 +91,9 @@
 
     </div>
 
-
-    <!-- AI -->
-
-    <div class="stat-card">
-
-        <div class="card-icon purple">
-            <i class="bi bi-cpu"></i>
-        </div>
-
-        <div class="card-info">
-
-            <h6>AI Recommendation</h6>
-
-            <h3>{{ data.ai_signal }}</h3>
-
-            <span>
-                Confidence {{ data.confidence }}
-            </span>
-
-        </div>
-
-    </div>
-
 </div>
+
+
 
 
 <!-- MARKET OVERVIEW -->
@@ -115,7 +108,7 @@
 
                 <h4>Market Overview</h4>
 
-                <span>
+                <span id="marketRangeDescription">
                     NIFTY 50 and SENSEX performance
                     over the last 6 months
                 </span>
@@ -123,12 +116,26 @@
             </div>
 
 
-            <div class="live-market-badge">
+            <div class="market-header-actions">
+                <div class="market-range-tabs" aria-label="Market overview range">
+                    <button type="button" class="market-range-button" data-period="1mo" data-label="1 month">
+                        1M
+                    </button>
+                    <button type="button" class="market-range-button" data-period="3mo" data-label="3 months">
+                        3M
+                    </button>
+                    <button type="button" class="market-range-button active" data-period="6mo" data-label="6 months">
+                        6M
+                    </button>
+                </div>
 
-                <span class="live-dot"></span>
+                <div class="live-market-badge">
 
-                Live Market
+                    <span class="live-dot"></span>
 
+                    Live Market
+
+                </div>
             </div>
 
         </div>
@@ -136,7 +143,7 @@
 
         <!-- LIVE MARKET CHART -->
 
-        <div id="market-chart" class="dashboard-market-chart">
+        <div id="market-chart" class="dashboard-market-chart" aria-live="polite">
 
             {% if market_chart %}
 
@@ -166,6 +173,7 @@
     </div>
 
 </div>
+
 
 
 <!-- DASHBOARD BOTTOM -->
@@ -285,111 +293,8 @@
 
     </div>
 
-    <!-- AI RECOMMENDATION -->
+</div>
 
-    <div class="ai-card">
-
-        <div class="ai-card-top">
-
-            <div>
-                <span class="ai-subtitle">
-                    AI Investment Strategist
-                </span>
-
-                <h2>AI Recommendation</h2>
-            </div>
-
-            <div class="ai-chip">
-                <i class="bi bi-cpu"></i>
-            </div>
-
-        </div>
-
-
-        <div class="signal-row">
-
-            <div class="signal-badge
-            {% if data.ai_signal == 'BUY' %}
-                buy
-            {% elif data.ai_signal == 'SELL' %}
-                sell
-            {% else %}
-                hold
-            {% endif %}
-        ">
-
-                {{ data.ai_signal }}
-
-            </div>
-
-            <div class="confidence-text">
-
-                {{ data.confidence }}
-
-                <span>Confidence</span>
-
-            </div>
-
-        </div>
-
-
-        <div class="progress">
-
-            <div class="progress-fill" data-confidence="{{ data.confidence }}">
-            </div>
-
-        </div>
-
-
-        <div class="ai-reasons">
-
-            {% if data.ai_signal=="BUY" %}
-
-            <div><i class="bi bi-check-circle-fill"></i> Strong Fundamentals</div>
-
-            <div><i class="bi bi-check-circle-fill"></i> Positive Momentum</div>
-
-            <div><i class="bi bi-check-circle-fill"></i> Bullish Market Trend</div>
-
-            {% elif data.ai_signal=="SELL" %}
-
-            <div><i class="bi bi-exclamation-circle-fill"></i> Weak Momentum</div>
-
-            <div><i class="bi bi-exclamation-circle-fill"></i> High Risk</div>
-
-            <div><i class="bi bi-exclamation-circle-fill"></i> Bearish Trend</div>
-
-            {% else %}
-
-            <div><i class="bi bi-dash-circle-fill"></i> Neutral Trend</div>
-
-            <div><i class="bi bi-dash-circle-fill"></i> Wait for Confirmation</div>
-
-            <div><i class="bi bi-dash-circle-fill"></i> Monitor Market</div>
-
-            {% endif %}
-
-        </div>
-
-
-        <div class="updated-time">
-
-            <i class="bi bi-clock-history"></i>
-
-            Updated just now
-
-        </div>
-
-
-        <a href="#" id="viewAnalysisBtn" class="analysis-btn">
-
-            View Full Analysis
-
-            <i class="bi bi-arrow-right"></i>
-
-        </a>
-
-    </div>
 </div>
 
 {% endblock %}

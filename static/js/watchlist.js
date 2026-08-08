@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             timer = setTimeout(async () => {
 
-                const response = await fetch(`/api/search-stocks?q=${query}`);
+                const response = await fetch(`/api/search-stocks?q=${encodeURIComponent(query)}`);
 
                 const stocks = await response.json();
 
@@ -181,66 +181,199 @@ document.addEventListener("DOMContentLoaded", () => {
        Load Live Data
     --------------------------*/
 
-    document.querySelectorAll(".watchlist-card").forEach(async card => {
 
-        const symbol = card.dataset.symbol;
+    const chart = document.getElementById("allocationChart");
 
-        try {
+    if (chart) {
 
-            const response = await fetch(`/api/stock-live/${symbol}`);
+        const legend = document.getElementById("portfolioLegend");
 
-            console.log("Status:", response.status);
+        async function loadWatchlistSummary() {
 
-            const data = await response.json();
+            const res = await fetch("/api/watchlist-summary");
 
-            console.log(symbol, data);
+            const data = await res.json();
 
-            document.getElementById(`company-${symbol}`).innerText =
-                data.company;
+            document.getElementById("summaryHoldings").innerText = data.holdings;
 
-            document.getElementById(`price-${symbol}`).innerText =
-                "₹ " + data.price;
+            document.getElementById("summaryGainers").innerText = data.gainers;
 
-            const change =
-                document.getElementById(`change-${symbol}`);
+            document.getElementById("summaryLosers").innerText = data.losers;
 
-            const sign = data.change >= 0 ? "+" : "";
+            document.getElementById("summaryReturn").innerText =
+                data.avg_return + "%";
 
-            change.innerHTML =
-                data.change >= 0
-                    ? `<i class="bi bi-arrow-up-right"></i> +${data.change}% Today`
-                    : `<i class="bi bi-arrow-down-right"></i> ${data.change}% Today`;
+            document.getElementById("gainersCount").innerText = data.gainers;
 
-            change.classList.remove("green", "red");
+            document.getElementById("losersCount").innerText = data.losers;
 
-            if (data.change >= 0) {
+            createPortfolioChart(data.allocation || []);
 
-                change.classList.add("green");
+            updateCards(data.stocks || []);
 
-            } else {
+        }
 
-                change.classList.add("red");
+        function createPortfolioChart(sectors) {
+
+            if (window.portfolioChart) {
+                window.portfolioChart.destroy();
+            }
+
+            const colors = [
+                "#2563eb",
+                "#16a34a",
+                "#f59e0b",
+                "#9333ea",
+                "#ef4444",
+                "#0ea5e9",
+                "#14b8a6",
+                "#64748b"
+            ];
+
+            window.portfolioChart = new Chart(chart, {
+                type: "doughnut",
+
+                data: {
+                    labels: sectors.map(x => x.sector),
+
+                    datasets: [{
+                        data: sectors.map(x => x.percentage),
+                        backgroundColor: colors.slice(0, sectors.length),
+                        borderWidth: 0
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "72%",
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+
+            });
+
+            legend.innerHTML = "";
+
+            sectors.forEach((item, index) => {
+
+                legend.innerHTML += `
+
+        <div class="legend-item">
+
+            <div class="legend-left">
+
+                <span class="legend-color"
+                style="background:${colors[index]}"></span>
+
+                <strong>${item.sector}</strong>
+
+            </div>
+
+            <span>${item.percentage}%</span>
+
+        </div>
+
+        `;
+
+            });
+
+        }
+        loadWatchlistSummary();
+    }
+
+    function updateCards(stocks) {
+
+        stocks.forEach(stock => {
+
+            const symbol = stock.symbol;
+
+            const change = document.getElementById(`change-${symbol}`);
+
+            if (change) {
+
+                change.innerText = stock.price_change;
+
+                change.classList.remove("green", "red");
+
+                if (stock.price_change_value > 0)
+                    change.classList.add("green");
+
+                else if (stock.price_change_value < 0)
+                    change.classList.add("red");
+
+            }
+            console.log(stock.symbol);
+
+            console.log(document.getElementById(`company-${stock.symbol}`));
+
+            console.log(document.getElementById(`price-${stock.symbol}`));
+
+            const company = document.getElementById(`company-${symbol}`);
+            if (company) {
+                company.innerText = stock.name;
+            }
+
+
+            const price = document.getElementById(`price-${symbol}`);
+            if (price) {
+                price.innerText = "₹ " + stock.price;
+            }
+
+            const marketcap = document.getElementById(`marketcap-${symbol}`);
+            if (marketcap) {
+                marketcap.innerText = stock.market_cap;
+            }
+
+            const pe = document.getElementById(`pe-${symbol}`);
+            if (pe) {
+                pe.innerText = stock.pe;
+            }
+
+            const high = document.getElementById(`high-${symbol}`);
+            if (high) {
+                high.innerText = stock.high52;
+            }
+
+            const low = document.getElementById(`low-${symbol}`);
+            if (low) {
+                low.innerText = stock.low52;
+            }
+
+            const sector = document.getElementById(`sector-${symbol}`);
+            if (sector) {
+                sector.innerHTML = `<i class="bi bi-building"></i>${stock.sector}`;
+            }
+
+            const signal = document.getElementById(`signal-${symbol}`);
+
+            if (!signal) return;
+
+            if (stock.price_change_value >= 2) {
+
+                signal.className = "signal-badge buy";
+                signal.innerText = "BUY";
+
+            }
+            else if (stock.price_change_value <= -2) {
+
+                signal.className = "signal-badge sell";
+                signal.innerText = "SELL";
+
+            }
+            else {
+
+                signal.className = "signal-badge hold";
+                signal.innerText = "HOLD";
 
             }
 
-        } catch (err) {
 
-            console.log(err);
 
-        }
-        document.getElementById(`marketcap-${symbol}`).innerText =
-            formatMarketCap(data.market_cap);
+        });
 
-        document.getElementById(`pe-${symbol}`).innerText =
-            data.pe ?? "--";
-
-        document.getElementById(`high-${symbol}`).innerText =
-            data.high52 ?? "--";
-
-        document.getElementById(`low-${symbol}`).innerText =
-            data.low52 ?? "--";
-
-    });
+    }
 
 
 });
@@ -260,3 +393,40 @@ function formatMarketCap(value) {
     return value;
 
 }
+
+async function loadMarketWidget() {
+
+    try {
+
+        const res = await fetch("/dashboard-market");
+
+        const data = await res.json();
+
+        const niftyValue = document.getElementById("niftyValue");
+        const sensexValue = document.getElementById("sensexValue");
+        const niftyChange = document.getElementById("niftyChange");
+        const sensexChange = document.getElementById("sensexChange");
+
+        if (!niftyValue || !sensexValue || !niftyChange || !sensexChange) return;
+
+        niftyValue.innerHTML = data.nifty;
+
+        sensexValue.innerHTML = data.sensex;
+
+        niftyChange.innerHTML = data.nifty_change;
+
+        sensexChange.innerHTML = data.sensex_change;
+
+    }
+
+    catch (e) {
+
+        console.log(e);
+
+    }
+
+
+
+}
+
+loadMarketWidget();

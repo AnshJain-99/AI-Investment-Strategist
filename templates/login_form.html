@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Login{% endblock %}
 
 {% block auth %}
 
@@ -15,8 +15,8 @@
             </a>
 
             <div class="auth-copy">
-                <h1>Create Account</h1>
-                <p>Build your watchlist, compare stocks and track the market.</p>
+                <h1>Welcome Back</h1>
+                <p>Login to your AI-powered investment dashboard.</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -30,17 +30,23 @@
             {% endwith %}
 
             <form method="POST" class="split-auth-form">
-                <input type="text" name="fullname" class="form-control" placeholder="Full Name" required>
-                <input type="email" name="email" class="form-control" placeholder="Email" required>
+                <input type="email" name="email" class="form-control" placeholder="Email Address" required>
                 <input type="password" name="password" class="form-control" placeholder="Password" required>
-                <input type="password" name="confirm" class="form-control" placeholder="Confirm Password" required>
 
-                <button class="btn btn-login">Create Account</button>
+                <div class="split-form-options">
+                    <label>
+                        <input type="checkbox">
+                        Remember me
+                    </label>
+                    <a href="/forgot-password">Forgot Password?</a>
+                </div>
+
+                <button class="btn btn-login">Sign In</button>
             </form>
 
             <p class="split-auth-bottom">
-                Already have an account?
-                <a href="/login">Login</a>
+                Don't have an account?
+                <a href="/register">Sign Up</a>
             </p>
         </section>
 
@@ -51,29 +57,28 @@
                 <div class="visual-cloud cloud-a"></div>
                 <div class="visual-cloud cloud-b"></div>
 
-                <div class="chart-board register-board">
-                    <span>Account Setup</span>
-                    <div class="account-steps-visual">
-                        <i class="done"></i>
-                        <i class="done"></i>
-                        <i></i>
+                <div class="chart-board">
+                    <span>Portfolio Growth</span>
+                    <div class="bar-set">
+                        <i style="height: 34%"></i>
+                        <i style="height: 58%"></i>
+                        <i style="height: 48%"></i>
+                        <i style="height: 76%"></i>
+                        <i style="height: 88%"></i>
                     </div>
                 </div>
 
                 <div class="trend-card">
-                    <span>Diversified Allocation</span>
-                    <div class="allocation-bars">
-                        <i style="height: 86%"></i>
-                        <i style="height: 62%"></i>
-                        <i style="height: 44%"></i>
-                        <i style="height: 72%"></i>
-                    </div>
+                    <span>NIFTY Trend</span>
+                    <svg viewBox="0 0 260 110" preserveAspectRatio="none">
+                        <path d="M5 88 C40 75, 55 40, 92 56 S145 98, 184 42 S225 28, 255 18" />
+                    </svg>
                 </div>
 
                 <div class="market-stat-card">
-                    <small>Smart Portfolio</small>
-                    <strong>Ready</strong>
-                    <span>Start tracking today</span>
+                    <small>Live Strategy</small>
+                    <strong>+18.42%</strong>
+                    <span>Projected return</span>
                 </div>
             </div>
         </section>

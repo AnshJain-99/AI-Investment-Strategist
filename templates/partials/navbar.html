@@ -21,9 +21,9 @@
 
             <div class="navbar-brand-text">
 
-                <h4>AI Investment</h4>
+                <h4>InvestIQ</h4>
 
-                <span>Strategist</span>
+                <span>AI-Powered Intelligence</span>
 
             </div>
 
@@ -34,7 +34,7 @@
 
         <nav class="top-nav-links">
 
-            <a href="/dashboard" class="top-nav-item active">
+            <a href="/dashboard" class="top-nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
 
                 Dashboard
 
@@ -46,10 +46,10 @@
 
             </a>
 
-            <a href="{{ url_for('compare') }}" class="top-nav-item">
+            <a href="{{ url_for('compare') }}" class="top-nav-item {% if request.endpoint in ['compare', 'compare_results'] %}active{% endif %}">
                 Compare Stocks
             </a>
-            <a href="{{ url_for('watchlist') }}" class="top-nav-item">
+            <a href="{{ url_for('watchlist') }}" class="top-nav-item {% if request.endpoint == 'watchlist' %}active{% endif %}">
                 
                 Watchlist
             </a>
@@ -167,7 +167,7 @@
                 <div class="dropdown-divider"></div>
 
 
-                <a href="#">
+                <a href="{{ url_for('profile') }}">
 
                     <i class="bi bi-person"></i>
 
@@ -176,7 +176,7 @@
                 </a>
 
 
-                <a href="#">
+                <a href="{{ url_for('settings') }}">
 
                     <i class="bi bi-gear"></i>
 
@@ -210,6 +210,45 @@
 <script>
 
     document.addEventListener("DOMContentLoaded", function () {
+
+        const navItems = document.querySelectorAll(".top-nav-item");
+
+        function updateHashNavigationState() {
+
+            if (window.location.pathname !== "/dashboard") {
+                return;
+            }
+
+            const dashboardLink =
+                document.querySelector('.top-nav-item[href="/dashboard"]');
+
+            const marketLink =
+                document.querySelector('.top-nav-item[href="/dashboard#market"]');
+
+            if (!dashboardLink || !marketLink) {
+                return;
+            }
+
+            navItems.forEach(function (item) {
+                item.classList.remove("active");
+            });
+
+            if (window.location.hash === "#market") {
+                marketLink.classList.add("active");
+            }
+
+            else {
+                dashboardLink.classList.add("active");
+            }
+
+        }
+
+        updateHashNavigationState();
+
+        window.addEventListener(
+            "hashchange",
+            updateHashNavigationState
+        );
 
 
         /* ======================================

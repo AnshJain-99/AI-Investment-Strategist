@@ -11,6 +11,10 @@ class User(UserMixin, db.Model):
     full_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(25), nullable=True)
+    risk_profile = db.Column(db.String(30), nullable=False, default="Moderate")
+    investment_goal = db.Column(db.String(120), nullable=True)
+    preferred_market = db.Column(db.String(30), nullable=False, default="NSE")
 
     watchlist = db.relationship(
         "Watchlist",

@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import yfinance as yf
+
 # from datetime import datetime
+from datetime import datetime, timedelta
 import feedparser
+import random
+import smtplib
+import ssl
+from email.message import EmailMessage
 from database.models import db, User, Watchlist
-from flask import request, jsonify
-from flask import jsonify
 
 
 from flask_bcrypt import Bcrypt
@@ -18,8 +22,6 @@ from flask_login import (
 )
 
 from config import Config
-
-from database.models import db, User
 
 from services.stock_service import StockService
 
@@ -59,6 +61,12 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
+@login_manager.unauthorized_handler
+def unauthorized():
+
+    return redirect(url_for("login"))
+
+
 # ==================================================
 # CREATE DATABASE TABLES
 # ==================================================
@@ -66,13 +74,73 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
+    def ensure_column(table_name, column_name, column_definition):
+        columns = db.session.execute(
+            db.text(f"PRAGMA table_info({table_name})")
+        ).fetchall()
+
+        if column_name not in [column[1] for column in columns]:
+            db.session.execute(
+                db.text(
+                    f"ALTER TABLE {table_name} "
+                    f"ADD COLUMN {column_name} {column_definition}"
+                )
+            )
+            db.session.commit()
+
+    ensure_column("users", "phone", "VARCHAR(25)")
+    ensure_column("users", "risk_profile", "VARCHAR(30) DEFAULT 'Moderate' NOT NULL")
+    ensure_column("users", "investment_goal", "VARCHAR(120)")
+    ensure_column("users", "preferred_market", "VARCHAR(30) DEFAULT 'NSE' NOT NULL")
+
+
+def send_otp_email(recipient, otp):
+
+    mail_server = app.config.get("MAIL_SERVER")
+    mail_username = app.config.get("MAIL_USERNAME")
+    mail_password = app.config.get("MAIL_PASSWORD")
+    mail_sender = app.config.get("MAIL_DEFAULT_SENDER") or mail_username
+    mail_port = int(app.config.get("MAIL_PORT") or 587)
+
+    if not mail_server or not mail_username or not mail_password or not mail_sender:
+        print(f"Password reset OTP for {recipient}: {otp}")
+        return False
+
+    message = EmailMessage()
+    message["Subject"] = "Your AI Investment Strategist OTP"
+    message["From"] = mail_sender
+    message["To"] = recipient
+    message.set_content(
+        "Use this OTP to reset your password:\n\n"
+        f"{otp}\n\n"
+        "This OTP will expire in 10 minutes."
+    )
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP(mail_server, mail_port) as server:
+        server.starttls(context=context)
+        server.login(mail_username, mail_password)
+        server.send_message(message)
+
+    return True
+
 
 # ==================================================
 # LOGIN
 # ==================================================
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
+def landing():
+
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+
+    return render_template("login.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
 
     if current_user.is_authenticated:
@@ -83,8 +151,9 @@ def login():
 
         password = request.form["password"]
 
-        user = db.session.execute(db.select(User).filter_by(
-            email=email)).scalar_one_or_none()
+        user = db.session.execute(
+            db.select(User).filter_by(email=email)
+        ).scalar_one_or_none()
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
@@ -93,7 +162,7 @@ def login():
 
         flash("Invalid Email or Password", "danger")
 
-    return render_template("login.html")
+    return render_template("login_form.html")
 
 
 # ==================================================
@@ -130,7 +199,8 @@ def register():
         # ------------------------------
 
         existing = db.session.execute(
-            db.select(User).filter_by(email=email)).scalar_one_or_none()
+            db.select(User).filter_by(email=email)
+        ).scalar_one_or_none()
 
         if existing:
             flash("Email already exists", "danger")
@@ -178,158 +248,22 @@ def dashboard():
     market = StockService.get_market_data()
 
     # Get interactive market chart
-    market_chart = StockService.get_market_chart()
-
-    # ==========================================
-    # DYNAMIC AI MARKET RECOMMENDATION
-    # ==========================================
-
-    ai_signal = "HOLD"
-    confidence = 50
-
-    try:
-
-        # Download recent NIFTY 50 market data
-        nifty_history = yf.download(
-            "^NSEI",
-            period="3mo",
-            progress=False,
-            auto_adjust=False,
-        )
-
-        # Get valid closing prices
-        nifty_close = nifty_history[
-            "Close"
-        ].dropna()
-
-        # Minimum 20 trading days required
-        if len(nifty_close) >= 20:
-
-            current_price = float(
-                nifty_close.iloc[-1].item()
-            )
-
-            price_20_days_ago = float(
-                nifty_close.iloc[-20].item()
-            )
-
-            # Calculate NIFTY 20-day return
-            market_return = (
-                (
-                    current_price
-                    - price_20_days_ago
-                )
-                / price_20_days_ago
-            ) * 100
-
-            # ==================================
-            # BUY SIGNAL
-            # ==================================
-
-            if market_return >= 3:
-
-                ai_signal = "BUY"
-
-                confidence = min(
-                    90,
-                    round(
-                        65
-                        + market_return * 3
-                    ),
-                )
-
-            # ==================================
-            # SELL SIGNAL
-            # ==================================
-
-            elif market_return <= -3:
-
-                ai_signal = "SELL"
-
-                confidence = min(
-                    90,
-                    round(
-                        65
-                        + abs(
-                            market_return
-                        ) * 3
-                    ),
-                )
-
-            # ==================================
-            # HOLD SIGNAL
-            # ==================================
-
-            else:
-
-                ai_signal = "HOLD"
-
-                confidence = round(
-                    55
-                    + (
-                        3
-                        - abs(
-                            market_return
-                        )
-                    ) * 5
-                )
-
-            # Show result in terminal
-            print(
-                "NIFTY 20-day return:",
-                round(
-                    market_return,
-                    2,
-                ),
-                "%",
-            )
-
-            print(
-                "AI recommendation:",
-                ai_signal,
-                confidence,
-            )
-
-    except Exception as error:
-
-        print(
-            "AI recommendation error:",
-            error,
-        )
+    market_chart = StockService.get_market_chart("6mo")
 
     # ==========================================
     # DASHBOARD CARD INFORMATION
     # ==========================================
 
+
     dashboard_data = {
-
         "portfolio_value": "₹0",
-
         "today_change": "+0.00%",
-
-        "nifty": market[
-            "nifty"
-        ],
-
-        "nifty_change": market[
-            "status"
-        ],
-
-        "sensex": market[
-            "sensex"
-        ],
-
-        "sensex_change": market[
-            "status"
-        ],
-
-        "ai_signal": ai_signal,
-
-        "confidence": (
-            f"{confidence}%"
-        ),
-
+        "nifty": market["nifty"],
+        "nifty_change": market["status"],
+        "sensex": market["sensex"],
+        "sensex_change": market["status"],
     }
+
 
     # ==========================================
     # LIVE INDIAN STOCK MARKET NEWS
@@ -340,74 +274,40 @@ def dashboard():
     try:
 
         news_feed = feedparser.parse(
-
             "https://news.google.com/"
             "rss/search?"
-
             "q=Indian+stock+market+"
             "NIFTY+SENSEX"
-
             "&hl=en-IN"
-
             "&gl=IN"
-
             "&ceid=IN:en"
-
         )
 
         # Get latest five news articles
-        for article in (
-            news_feed.entries[:5]
-        ):
+        for article in news_feed.entries[:5]:
 
             market_news.append(
-
                 {
-
                     "title": article.get(
-
                         "title",
-
-                        "Market news "
-                        "unavailable",
-
+                        "Market news " "unavailable",
                     ),
-
-
                     "link": article.get(
-
                         "link",
-
                         "#",
-
                     ),
-
-
                     "published": article.get(
-
                         "published",
-
                         "Recently",
-
                     ),
-
-
                     "source": article.get(
-
                         "source",
-
                         {},
-
                     ).get(
-
                         "title",
-
                         "Market News",
-
                     ),
-
                 }
-
             )
 
     except Exception as error:
@@ -422,16 +322,13 @@ def dashboard():
     # ==========================================
 
     return render_template(
-
         "dashboard.html",
-
         data=dashboard_data,
-
         market_chart=market_chart,
-
         market_news=market_news,
-
     )
+
+
 # ==================================================
 # DYNAMIC STOCK SEARCH API
 # ==================================================
@@ -490,8 +387,7 @@ def stock_search():
             if not symbol:
                 continue
 
-            company_name = stock.get("longname") or stock.get(
-                "shortname") or symbol
+            company_name = stock.get("longname") or stock.get("shortname") or symbol
 
             exchange = stock.get("exchDisp") or stock.get("exchange", "")
 
@@ -519,8 +415,7 @@ def stock_search():
         # SHOW INDIAN NSE RESULTS FIRST
         # ------------------------------------------
 
-        suggestions.sort(
-            key=lambda item: 0 if item["symbol"].endswith(".NS") else 1)
+        suggestions.sort(key=lambda item: 0 if item["symbol"].endswith(".NS") else 1)
 
         return jsonify(suggestions[:8])
 
@@ -542,7 +437,9 @@ def analysis():
     symbol = request.args.get("symbol", "").strip()
 
     if not symbol:
-        return render_template("analysis.html", stock=None, chart=None, news=[], ai=None)
+        return render_template(
+            "analysis.html", stock=None, chart=None, news=[], ai=None
+        )
 
     # Get company information
 
@@ -560,16 +457,7 @@ def analysis():
 
     print("AI Analysis:", ai)
 
-
-
-    return render_template(
-        "analysis.html",
-        stock=stock,
-        chart=chart,
-        news=news,
-        ai=ai
-
-    )
+    return render_template("analysis.html", stock=stock, chart=chart, news=news, ai=ai)
 
 
 # ==================================================
@@ -594,54 +482,157 @@ def logout():
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
 
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+
+    step = session.get("reset_step", "request")
+
     if request.method == "POST":
-        email = request.form["email"]
+        action = request.form.get("action", "send_otp")
 
-        password = request.form["password"]
+        if action == "send_otp":
+            email = request.form.get("email", "").strip().lower()
 
-        confirm = request.form["confirm"]
+            user = db.session.execute(
+                db.select(User).filter_by(email=email)
+            ).scalar_one_or_none()
 
-        # ------------------------------
-        # CHECK PASSWORDS
-        # ------------------------------
+            if not user:
+                flash("Email not found!", "danger")
 
-        if password != confirm:
-            flash("Passwords do not match!", "danger")
+                return redirect(url_for("forgot_password"))
+
+            otp = f"{random.randint(100000, 999999)}"
+            session["reset_email"] = email
+            session["reset_otp"] = otp
+            session["reset_otp_expires"] = (
+                datetime.utcnow() + timedelta(minutes=10)
+            ).isoformat()
+            session["reset_step"] = "verify"
+
+            try:
+                email_sent = send_otp_email(email, otp)
+
+                if email_sent:
+                    flash("OTP sent to your registered email.", "success")
+                else:
+                    flash(f"Dev OTP: {otp}", "info")
+
+            except Exception as error:
+                print("OTP email error:", error)
+                flash(f"Email failed. Dev OTP: {otp}", "warning")
 
             return redirect(url_for("forgot_password"))
 
-        # ------------------------------
-        # CHECK USER
-        # ------------------------------
+        if action == "verify_otp":
+            entered_otp = request.form.get("otp", "").strip()
+            expires_raw = session.get("reset_otp_expires")
 
-        user = db.session.execute(db.select(User).filter_by(
-            email=email)).scalar_one_or_none()
+            if not expires_raw or datetime.utcnow() > datetime.fromisoformat(expires_raw):
+                session["reset_step"] = "request"
+                flash("OTP expired. Please request a new OTP.", "danger")
 
-        if not user:
-            flash("Email not found!", "danger")
+                return redirect(url_for("forgot_password"))
+
+            if entered_otp != session.get("reset_otp"):
+                flash("Invalid OTP. Please try again.", "danger")
+
+                return redirect(url_for("forgot_password"))
+
+            session["reset_step"] = "reset"
+            flash("OTP verified. Set your new password.", "success")
 
             return redirect(url_for("forgot_password"))
 
-        # ------------------------------
-        # CREATE NEW PASSWORD HASH
-        # ------------------------------
+        if action == "reset_password":
+            password = request.form.get("password", "")
+            confirm = request.form.get("confirm", "")
+            email = session.get("reset_email")
 
-        hashed_password = bcrypt.generate_password_hash(
-            password).decode("utf-8")
+            if session.get("reset_step") != "reset" or not email:
+                flash("Please verify OTP first.", "danger")
 
-        # ------------------------------
-        # UPDATE PASSWORD
-        # ------------------------------
+                return redirect(url_for("forgot_password"))
 
-        user.password = hashed_password
+            if password != confirm:
+                flash("Passwords do not match!", "danger")
+
+                return redirect(url_for("forgot_password"))
+
+            user = db.session.execute(
+                db.select(User).filter_by(email=email)
+            ).scalar_one_or_none()
+
+            if not user:
+                flash("Email not found!", "danger")
+
+                return redirect(url_for("forgot_password"))
+
+            user.password = bcrypt.generate_password_hash(password).decode("utf-8")
+
+            db.session.commit()
+
+            session.pop("reset_email", None)
+            session.pop("reset_otp", None)
+            session.pop("reset_otp_expires", None)
+            session.pop("reset_step", None)
+
+            flash("Password updated successfully! Please login.", "success")
+
+            return redirect(url_for("login"))
+
+    return render_template("forgot_password.html", step=step)
+
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+
+    if request.method == "POST":
+
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        phone = request.form.get("phone", "").strip()
+        risk_profile = request.form.get("risk_profile", "Moderate").strip()
+        investment_goal = request.form.get("investment_goal", "").strip()
+        preferred_market = request.form.get("preferred_market", "NSE").strip()
+
+        if not full_name or not email:
+            flash("Name and email are required.", "danger")
+
+            return redirect(url_for("profile"))
+
+        existing_user = User.query.filter(
+            User.email == email,
+            User.id != current_user.id,
+        ).first()
+
+        if existing_user:
+            flash("This email is already used by another account.", "danger")
+
+            return redirect(url_for("profile"))
+
+        current_user.full_name = full_name
+        current_user.email = email
+        current_user.phone = phone
+        current_user.risk_profile = risk_profile
+        current_user.investment_goal = investment_goal
+        current_user.preferred_market = preferred_market
 
         db.session.commit()
 
-        flash("Password updated successfully! Please login.", "success")
+        flash("Profile updated successfully.", "success")
 
-        return redirect(url_for("login"))
+        return redirect(url_for("profile"))
 
-    return render_template("forgot_password.html")
+    return render_template("profile.html", active_panel="profile")
+
+
+@app.route("/settings")
+@login_required
+def settings():
+
+    return render_template("profile.html", active_panel="settings")
 
 
 @app.route("/compare")
@@ -829,75 +820,86 @@ def compare_results():
 @login_required
 def watchlist():
 
-    stocks = Watchlist.query.filter_by(
-        user_id=current_user.id
-    ).all()
+    stocks = Watchlist.query.filter_by(user_id=current_user.id).all()
 
-    return render_template(
-        "watchlist.html",
-        stocks=stocks
-    )
+    return render_template("watchlist.html", stocks=stocks)
 
 
 @app.route("/watchlist/add", methods=["POST"])
 @login_required
 def add_to_watchlist():
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
-    symbol = data.get("symbol", "").upper()
+    symbol = data.get("symbol", "").strip().upper()
 
     if not symbol:
-        return jsonify({
-            "success": False,
-            "message": "Invalid symbol"
-        }), 400
+        return jsonify({"success": False, "message": "Invalid symbol"}), 400
 
-    exists = Watchlist.query.filter_by(
-        user_id=current_user.id,
-        symbol=symbol
-    ).first()
+    exists = Watchlist.query.filter_by(user_id=current_user.id, symbol=symbol).first()
 
     if exists:
-        return jsonify({
-            "success": False,
-            "message": "Already added"
-        })
+        return jsonify({"success": False, "message": "Already added"})
 
-    stock = Watchlist(
-        user_id=current_user.id,
-        symbol=symbol
-    )
+    stock = Watchlist(user_id=current_user.id, symbol=symbol)
 
     db.session.add(stock)
     db.session.commit()
 
-    return jsonify({
-        "success": True
-    })
+    return jsonify({"success": True})
 
 
 @app.route("/watchlist/remove", methods=["POST"])
 @login_required
 def remove_from_watchlist():
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
-    symbol = data.get("symbol")
+    symbol = data.get("symbol", "").strip().upper()
 
-    stock = Watchlist.query.filter_by(
-        user_id=current_user.id,
-        symbol=symbol
-    ).first()
+    stock = Watchlist.query.filter_by(user_id=current_user.id, symbol=symbol).first()
 
     if stock:
 
         db.session.delete(stock)
         db.session.commit()
 
-    return jsonify({
-        "success": True
-    })
+    return jsonify({"success": True})
+
+
+# ==================================================
+# WATCHLIST SUMMARY API
+# ==================================================
+
+
+@app.route("/api/watchlist-summary")
+@login_required
+def watchlist_summary():
+
+    try:
+
+        watchlist = Watchlist.query.filter_by(user_id=current_user.id).all()
+
+        symbols = [stock.symbol for stock in watchlist]
+
+        summary = StockService.get_watchlist_summary(symbols)
+
+        return jsonify(summary)
+
+    except Exception as e:
+
+        print("Watchlist Summary Error:", e)
+
+        return jsonify(
+            {
+                "holdings": 0,
+                "gainers": 0,
+                "losers": 0,
+                "avg_return": 0,
+                "allocation": [],
+                "stocks": [],
+            }
+        )
 
 
 @app.route("/api/stock-live/<symbol>")
@@ -919,49 +921,77 @@ def stock_live(symbol):
 
         current = float(history["Close"].iloc[-1])
 
-        previous = (float(history["Close"].iloc[-2])if len(history) >= 2 else current)
-
-       
+        previous = float(history["Close"].iloc[-2]) if len(history) >= 2 else current
 
         change = round(((current - previous) / previous) * 100, 2)
 
-        return jsonify({
+        return jsonify(
+            {
+                "company": info.get("longName", symbol),
+                "price": f"{current:,.2f}",
+                "change": change,
+                "market_cap": info.get("marketCap"),
+                "pe": info.get("trailingPE"),
+                "high52": info.get("fiftyTwoWeekHigh"),
+                "low52": info.get("fiftyTwoWeekLow"),
+            }
+        )
 
-            "company": info.get("longName", symbol),
+    except Exception as error:
+        print("Live Stock Error:", error)
 
-            "price": f"{current:,.2f}",
+        return jsonify(
+            {
+                "company": symbol,
+                "price": "--",
+                "change": 0,
+                "market_cap": "--",
+                "pe": "--",
+                "high52": "--",
+                "low52": "--",
+            }
+        )
 
-            "change": change,
 
-            "market_cap": info.get("marketCap"),
+@app.route("/dashboard-market")
+@login_required
+def dashboard_market():
 
-            "pe": info.get("trailingPE"),
+    market = StockService.get_market_data()
 
-            "high52": info.get("fiftyTwoWeekHigh"),
+    return jsonify(
+        {
+            "nifty": market["nifty"],
+            "sensex": market["sensex"],
+            "nifty_change": market["status"],
+            "sensex_change": market["status"],
+        }
+    )
 
-            "low52": info.get("fiftyTwoWeekLow")
 
-        })
+@app.route("/api/dashboard-market-chart")
+@login_required
+def dashboard_market_chart():
 
-    except:
+    period = request.args.get("period", "6mo")
 
-        return jsonify({
+    chart = StockService.get_market_chart(period)
 
-            "company": symbol,
+    if not chart:
+        return jsonify(
+            {
+                "success": False,
+                "message": "Unable to load market chart.",
+            }
+        ), 503
 
-            "price": "--",
+    return jsonify(
+        {
+            "success": True,
+            "chart_html": chart,
+        }
+    )
 
-            "change": 0,
-
-            "market_cap": "--",
-
-            "pe": "--",
-
-            "high52": "--",
-
-            "low52": "--"
-
-        })
 
 # ==================================================
 # RUN APPLICATION

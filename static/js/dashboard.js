@@ -88,6 +88,117 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", () => loadMarketChart(button));
     });
 
+    const activeMarketRange = document.querySelector(".market-range-button.active");
+
+    if (
+        marketChart &&
+        activeMarketRange &&
+        marketChart.querySelector(".chart-loading-state")
+    ) {
+        loadMarketChart(activeMarketRange);
+    }
+
+    const askAiForm = document.getElementById("askAiForm");
+    const askAiQuestion = document.getElementById("askAiQuestion");
+    const askAiAnswer = document.getElementById("askAiAnswer");
+    const askAiSuggestionButtons = document.querySelectorAll(
+        ".ask-ai-suggestions button"
+    );
+
+    function setAskAiAnswer(message, state = "idle", question = "") {
+        if (!askAiAnswer) {
+            return;
+        }
+
+        const icon =
+            state === "loading"
+                ? "bi-arrow-repeat"
+                : state === "error"
+                    ? "bi-exclamation-triangle"
+                    : "bi-lightning-charge";
+
+        askAiAnswer.className = `ask-ai-answer ${state}`;
+        askAiAnswer.replaceChildren();
+
+        if (question) {
+            const userMessage = document.createElement("div");
+            userMessage.className = "chat-message user";
+
+            const userText = document.createElement("span");
+            userText.textContent = question;
+
+            userMessage.append(userText);
+            askAiAnswer.append(userMessage);
+        }
+
+        const botMessage = document.createElement("div");
+        botMessage.className = "chat-message bot";
+
+        const iconElement = document.createElement("i");
+        iconElement.className = `bi ${icon}`;
+
+        const messageElement = document.createElement("span");
+        messageElement.textContent = message;
+
+        botMessage.append(iconElement, messageElement);
+        askAiAnswer.append(botMessage);
+    }
+
+    async function askInvestIQ(question) {
+        if (!question) {
+            return;
+        }
+
+        const submitButton = askAiForm.querySelector("button[type='submit']");
+
+        submitButton.disabled = true;
+        setAskAiAnswer(
+            "InvestIQ live stock context ke saath answer bana raha hai...",
+            "loading",
+            question
+        );
+
+        try {
+            const response = await fetch("/api/ask-ai", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await response.json();
+
+            if (!data.answer) {
+                throw new Error(data.message || "AI answer unavailable");
+            }
+
+            setAskAiAnswer(data.answer, data.success ? "ready" : "error", question);
+        } catch (error) {
+            setAskAiAnswer(
+                "AI abhi connect nahi ho pa raha. Thodi der baad retry karo.",
+                "error",
+                question
+            );
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    if (askAiForm && askAiQuestion && askAiAnswer) {
+        askAiForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            askInvestIQ(askAiQuestion.value.trim());
+        });
+
+        askAiSuggestionButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                askAiQuestion.value = button.dataset.question || "";
+                askInvestIQ(askAiQuestion.value.trim());
+            });
+        });
+    }
+
     const chart = document.getElementById("allocationChart");
 
     if (chart) {

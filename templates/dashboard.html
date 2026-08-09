@@ -21,10 +21,51 @@
         <p>Here's your live investment dashboard.</p>
     </div>
 
-    <a href="{{ url_for('watchlist') }}" class="dashboard-heading-action">
-        <i class="bi bi-bookmark-star"></i>
-        Watchlist
-    </a>
+    <div class="dashboard-heading-side">
+        <form class="ask-ai-widget" id="askAiForm">
+            <div class="ask-ai-top">
+                <div>
+                    <span>Ask InvestIQ</span>
+                    <strong>Stock AI Assistant</strong>
+                </div>
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <div class="ask-ai-input-row">
+                <input
+                    type="text"
+                    id="askAiQuestion"
+                    placeholder="Ask about TCS, Reliance, NIFTY..."
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" title="Ask AI">
+                    <i class="bi bi-send"></i>
+                </button>
+            </div>
+
+            <!-- <div class="ask-ai-suggestions">
+                <button type="button" data-question="TCS stock buy karna chahiye?">
+                    TCS view
+                </button>
+                <button type="button" data-question="Reliance ka trend batao">
+                    Reliance trend
+                </button>
+            </div>
+
+            <div class="ask-ai-answer" id="askAiAnswer">
+                <div class="chat-message bot">
+                    <i class="bi bi-lightning-charge"></i>
+                    <span>Stock ka naam likho aur pucho: buy, hold ya wait?</span>
+                </div>
+            </div> -->
+        </form>
+
+        <a href="{{ url_for('watchlist') }}" class="dashboard-heading-action">
+            <i class="bi bi-bookmark-star"></i>
+            Watchlist
+        </a>
+    </div>
 </div>
 
 <div class="dashboard-grid">
@@ -96,25 +137,15 @@
 
 
 
-<!-- MARKET OVERVIEW -->
-
-<div id="market" class="dashboard-row">
-
-    <div class="chart-card market-overview-card">
-
+<section class="portfolio-workspace">
+    <div id="market" class="chart-card market-overview-card dashboard-panel panel-large">
         <div class="card-header market-chart-header">
-
             <div>
-
                 <h4>Market Overview</h4>
-
                 <span id="marketRangeDescription">
-                    NIFTY 50 and SENSEX performance
-                    over the last 6 months
+                    NIFTY 50 and SENSEX performance over the last 6 months
                 </span>
-
             </div>
-
 
             <div class="market-header-actions">
                 <div class="market-range-tabs" aria-label="Market overview range">
@@ -130,170 +161,205 @@
                 </div>
 
                 <div class="live-market-badge">
-
                     <span class="live-dot"></span>
-
                     Live Market
-
                 </div>
             </div>
-
         </div>
-
-
-        <!-- LIVE MARKET CHART -->
 
         <div id="market-chart" class="dashboard-market-chart" aria-live="polite">
-
             {% if market_chart %}
-
             {{ market_chart | safe }}
-
             {% else %}
-
-            <div class="chart-placeholder">
-
-                <i class="bi bi-graph-up-arrow"></i>
-
-                <h5>
-                    Market chart unavailable
-                </h5>
-
-                <p>
-                    Unable to load market data.
-                    Please refresh the page.
-                </p>
-
+            <div class="chart-placeholder chart-loading-state">
+                <i class="bi bi-arrow-repeat"></i>
+                <h5>Loading live market chart</h5>
+                <p>NIFTY 50 and SENSEX data is syncing from yfinance.</p>
             </div>
-
             {% endif %}
-
         </div>
-
     </div>
 
-</div>
+    <aside class="dashboard-panel holdings-panel">
+        <div class="panel-title-row">
+            <div>
+                <h4>Holdings</h4>
+                <span>Your stocks and watchlist</span>
+            </div>
+            <a href="{{ url_for('watchlist') }}">View All <i class="bi bi-arrow-right"></i></a>
+        </div>
 
+        <div class="holding-list">
+            {% for stock in holdings %}
+            <a href="{{ url_for('analysis') }}?symbol={{ stock.symbol }}" class="holding-item">
+                <div class="stock-avatar">{{ stock.symbol[:1] }}</div>
+                <div class="holding-name">
+                    <strong>{{ stock.symbol }}</strong>
+                    <span>{{ stock.name }}</span>
+                </div>
+                <div class="holding-price">{{ stock.price }}</div>
+                <div class="holding-weight">
+                    <span style="width: {{ stock.weight }}%"></span>
+                </div>
+                <div class="holding-change {% if stock.change_value < 0 %}down{% endif %} {% if not stock.is_live %}offline{% endif %}">
+                    {% if stock.is_live %}{{ stock.change_percent }}{% else %}Offline{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </aside>
 
+    <div class="dashboard-panel allocation-panel">
+        <div class="panel-title-row">
+            <div>
+                <h4>Allocation</h4>
+                <span>Portfolio mix</span>
+            </div>
+            <button type="button">Rebalance <i class="bi bi-arrow-right"></i></button>
+        </div>
 
-<!-- DASHBOARD BOTTOM -->
+        <div class="allocation-content">
+            <div class="allocation-donut"></div>
+            <div class="allocation-legend">
+                <span><b></b> Stocks <strong>58%</strong></span>
+                <span><b></b> Index <strong>24%</strong></span>
+                <span><b></b> Watchlist <strong>13%</strong></span>
+                <span><b></b> Cash <strong>5%</strong></span>
+            </div>
+        </div>
 
-<div class="dashboard-bottom">
+        <div class="allocation-metrics">
+            <span>Volatility <strong>14.2%</strong></span>
+            <span>Beta <strong>0.87</strong></span>
+            <span>Signal <strong>Moderate</strong></span>
+        </div>
+    </div>
 
+    <div class="dashboard-panel movers-panel">
+        <div class="panel-title-row">
+            <div>
+                <h4>Top Movers</h4>
+                <span>Gainers and losers</span>
+            </div>
+            <small>Today</small>
+        </div>
 
-    <!-- MARKET NEWS -->
-
-    <div class="news-card">
-
-        <!-- NEWS HEADER -->
-
-        <div class="card-header news-card-header">
+        <div class="movers-grid">
+            <div>
+                <h5>Gainers</h5>
+                {% if top_gainers %}
+                {% for stock in top_gainers %}
+                <a href="{{ url_for('analysis') }}?symbol={{ stock.symbol }}" class="mover-item">
+                    <span>
+                        <strong>{{ stock.symbol }}</strong>
+                        <small>{{ stock.name }}</small>
+                    </span>
+                    <b class="{% if not stock.is_live %}offline{% endif %}">
+                        {% if stock.is_live %}{{ stock.change_percent }}{% else %}Offline{% endif %}
+                    </b>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="mover-empty">No active gainers right now.</div>
+                {% endif %}
+            </div>
 
             <div>
-
-                <span class="news-section-label">
-                    Market Updates
-                </span>
-
-                <h4>
-                    Latest Market News
-                </h4>
-
+                <h5 class="loser-title">Losers</h5>
+                {% if top_losers %}
+                {% for stock in top_losers %}
+                <a href="{{ url_for('analysis') }}?symbol={{ stock.symbol }}" class="mover-item {% if stock.change_value < 0 %}loser{% endif %}">
+                    <span>
+                        <strong>{{ stock.symbol }}</strong>
+                        <small>{{ stock.name }}</small>
+                    </span>
+                    <b class="{% if not stock.is_live %}offline{% endif %}">
+                        {% if stock.is_live %}{{ stock.change_percent }}{% else %}Offline{% endif %}
+                    </b>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="mover-empty">No active losers right now.</div>
+                {% endif %}
             </div>
-
-
-            <div class="live-news-badge">
-
-                <span class="live-dot"></span>
-
-                Live News
-
-            </div>
-
         </div>
-
-
-        <!-- NEWS LIST -->
-
-        <div class="market-news-list">
-
-            {% if market_news %}
-
-            {% for article in market_news %}
-
-            <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" class="market-news-item">
-
-                <div class="news-icon">
-
-                    <i class="bi bi-newspaper"></i>
-
-                </div>
-
-
-                <div class="news-details">
-
-                    <div class="news-meta">
-
-                        <span class="news-source">
-
-                            {{ article.source }}
-
-                        </span>
-
-                        <span class="news-date">
-
-                            <i class="bi bi-clock"></i>
-
-                            {{ article.published }}
-
-                        </span>
-
-                    </div>
-
-
-                    <h5>
-
-                        {{ article.title }}
-
-                    </h5>
-
-                </div>
-
-
-                <div class="news-link-icon">
-
-                    <i class="bi bi-arrow-up-right"></i>
-
-                </div>
-
-            </a>
-
-            {% endfor %}
-
-
-            {% else %}
-
-            <div class="news-empty-state">
-
-                <i class="bi bi-wifi-off"></i>
-
-                <h5>
-                    Market news is unavailable
-                </h5>
-
-                <p>
-                    Please refresh the dashboard after some time.
-                </p>
-
-            </div>
-
-            {% endif %}
-
-        </div>
-
     </div>
 
-</div>
+    <div class="dashboard-panel recommendations-panel">
+        <div class="panel-title-row">
+            <div>
+                <h4>Recommended Stocks</h4>
+                <span>Changes on every refresh</span>
+            </div>
+            <i class="bi bi-stars"></i>
+        </div>
+
+        <div class="recommendation-list">
+            {% for stock in recommended_stocks %}
+            <a href="{{ url_for('analysis') }}?symbol={{ stock.symbol }}" class="recommendation-item">
+                <div>
+                    <strong>{{ stock.symbol }}</strong>
+                    <span>{{ stock.name }}</span>
+                </div>
+                <div>
+                    <b>{{ stock.signal }}</b>
+                    <small class="{% if stock.change_value < 0 %}down{% endif %} {% if not stock.is_live %}offline{% endif %}">
+                        {% if stock.is_live %}{{ stock.change_percent }}{% else %}Offline{% endif %}
+                    </small>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-panel news-card intelligence-panel">
+        <div class="card-header news-card-header">
+            <div>
+                <span class="news-section-label">Market Intelligence</span>
+                <h4>Latest Market News</h4>
+            </div>
+
+            <div class="live-news-badge">
+                <span class="live-dot"></span>
+                Live News
+            </div>
+        </div>
+
+        <div class="market-news-list">
+            {% if market_news %}
+            {% for article in market_news %}
+            <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" class="market-news-item">
+                <div class="news-icon">
+                    <i class="bi bi-newspaper"></i>
+                </div>
+
+                <div class="news-details">
+                    <div class="news-meta">
+                        <span class="news-source">{{ article.source }}</span>
+                        <span class="news-date">
+                            <i class="bi bi-clock"></i>
+                            {{ article.published }}
+                        </span>
+                    </div>
+
+                    <h5>{{ article.title }}</h5>
+                </div>
+
+                <div class="news-link-icon">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+            </a>
+            {% endfor %}
+            {% else %}
+            <div class="news-empty-state">
+                <i class="bi bi-wifi-off"></i>
+                <h5>Market news is unavailable</h5>
+                <p>Please refresh the dashboard after some time.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
 
 </div>
 

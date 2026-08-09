@@ -2,6 +2,21 @@ import yfinance as yf
 import plotly.graph_objects as go
 from plotly.offline import plot
 from datetime import datetime
+import os
+
+
+YFINANCE_CACHE_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "instance",
+    "yfinance_cache",
+)
+
+os.makedirs(YFINANCE_CACHE_DIR, exist_ok=True)
+
+try:
+    yf.set_tz_cache_location(YFINANCE_CACHE_DIR)
+except AttributeError:
+    pass
 
 
 class StockService:

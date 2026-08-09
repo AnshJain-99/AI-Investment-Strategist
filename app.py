@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import yfinance as yf
+import os
 
 # from datetime import datetime
 from datetime import datetime, timedelta
@@ -27,6 +28,19 @@ from services.stock_service import StockService
 
 import requests
 
+YFINANCE_CACHE_DIR = os.path.join(
+    os.path.dirname(__file__),
+    "instance",
+    "yfinance_cache",
+)
+
+os.makedirs(YFINANCE_CACHE_DIR, exist_ok=True)
+
+try:
+    yf.set_tz_cache_location(YFINANCE_CACHE_DIR)
+except AttributeError:
+    pass
+
 app = Flask(__name__)
 
 app.config.from_object(Config)
@@ -46,6 +60,353 @@ POPULAR_STOCKS = [
     {"symbol": "MARUTI.NS", "display_symbol": "MARUTI", "name": "Maruti Suzuki", "exchange": "NSE", "type": "EQUITY"},
     {"symbol": "TATAMOTORS.NS", "display_symbol": "TATAMOTORS", "name": "Tata Motors", "exchange": "NSE", "type": "EQUITY"},
 ]
+
+MARKET_WATCH_SYMBOLS = [
+    "RELIANCE.NS",
+    "TCS.NS",
+    "INFY.NS",
+    "HDFCBANK.NS",
+    "ICICIBANK.NS",
+    "SBIN.NS",
+    "BHARTIARTL.NS",
+    "ITC.NS",
+    "LT.NS",
+    "AXISBANK.NS",
+    "MARUTI.NS",
+    "WIPRO.NS",
+    "HCLTECH.NS",
+    "KOTAKBANK.NS",
+    "BAJFINANCE.NS",
+    "SUNPHARMA.NS",
+    "ULTRACEMCO.NS",
+    "ASIANPAINT.NS",
+    "TITAN.NS",
+    "POWERGRID.NS",
+    "NTPC.NS",
+    "ONGC.NS",
+    "ADANIENT.NS",
+]
+
+
+def detect_stock_from_question(question):
+    stripped_question = question.strip()
+    normalized_question = question.upper()
+
+    index_aliases = {
+        "NIFTY 50": "^NSEI",
+        "NIFTY": "^NSEI",
+        "SENSEX": "^BSESN",
+        "BSE": "^BSESN",
+    }
+
+    for alias, symbol in index_aliases.items():
+        if alias in normalized_question:
+            return symbol
+
+    for stock in POPULAR_STOCKS:
+        aliases = [
+            stock["symbol"].upper(),
+            stock["display_symbol"].upper(),
+            stock["name"].upper(),
+        ]
+
+        if any(alias in normalized_question for alias in aliases):
+            return stock["symbol"]
+
+    words = [
+        word.strip(".,?!()[]{}:;\"'")
+        for word in stripped_question.split()
+    ]
+
+    for word in words:
+        clean_word = word.upper()
+
+        if clean_word.endswith((".NS", ".BO")):
+            return clean_word
+
+        if 2 <= len(clean_word) <= 12 and clean_word.isalpha() and word.isupper():
+            return f"{clean_word}.NS"
+
+    return ""
+
+
+def get_ai_stock_context(symbol):
+    if not symbol:
+        return "No specific stock symbol was detected in the question."
+
+    try:
+        stock = StockService.get_stock_details(symbol)
+
+        if not stock:
+            return f"Stock symbol detected: {symbol}. Live details are unavailable."
+
+        return (
+            f"Detected stock: {stock.get('name', symbol)} ({stock.get('symbol', symbol)}). "
+            f"Current price: {stock.get('price', 'N/A')}. "
+            f"Change: {stock.get('price_change', 'N/A')}. "
+            f"Volume: {stock.get('volume', 'N/A')}. "
+            f"Day range: {stock.get('day_low', 'N/A')} - {stock.get('day_high', 'N/A')}. "
+            f"52-week range: {stock.get('low52', 'N/A')} - {stock.get('high52', 'N/A')}."
+        )
+
+    except Exception as error:
+        print("Ask AI stock context error:", error)
+        return f"Stock symbol detected: {symbol}. Live details are temporarily unavailable."
+
+
+def parse_percent_value(value):
+    try:
+        if value is None:
+            return 0.0
+
+        cleaned_value = str(value).replace("%", "").replace("+", "").strip()
+        return float(cleaned_value)
+
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def parse_price_value(value):
+    try:
+        if value is None:
+            return 0.0
+
+        cleaned_value = (
+            str(value)
+            .replace("₹", "")
+            .replace(",", "")
+            .replace("N/A", "")
+            .strip()
+        )
+
+        return float(cleaned_value) if cleaned_value else 0.0
+
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def get_dashboard_stock_snapshot(symbol):
+    raw_symbol = (symbol or "").strip().upper()
+
+    symbol_aliases = {
+        "BSE": "BSE.NS",
+        "IDEA": "IDEA.NS",
+        "NIFTY": "^NSEI",
+        "NIFTY50": "^NSEI",
+        "SENSEX": "^BSESN",
+    }
+
+    normalized_symbol = symbol_aliases.get(raw_symbol, raw_symbol)
+
+    if normalized_symbol.startswith("^"):
+        candidates = [normalized_symbol]
+    elif "." in normalized_symbol:
+        candidates = [normalized_symbol]
+    else:
+        candidates = [f"{normalized_symbol}.NS", f"{normalized_symbol}.BO", normalized_symbol]
+
+    details = None
+    selected_symbol = candidates[0] if candidates else raw_symbol
+
+    for candidate in candidates:
+        try:
+            details = StockService.get_stock_details(candidate)
+
+            if details and details.get("price") != "N/A":
+                selected_symbol = details.get("symbol", candidate)
+                break
+
+        except Exception as error:
+            print("Dashboard service snapshot error:", error)
+
+    if not details or details.get("price") == "N/A":
+        for candidate in candidates:
+            try:
+                ticker = yf.Ticker(candidate)
+                info = {}
+                fast_info = {}
+
+                try:
+                    info = ticker.info or {}
+                except Exception:
+                    info = {}
+
+                try:
+                    fast_info = ticker.fast_info or {}
+                except Exception:
+                    fast_info = {}
+
+                history = ticker.history(period="5d", interval="1d", auto_adjust=False)
+
+                close_prices = (
+                    history["Close"].dropna()
+                    if not history.empty and "Close" in history.columns
+                    else []
+                )
+
+                current_price = (
+                    fast_info.get("lastPrice")
+                    or info.get("currentPrice")
+                    or info.get("regularMarketPrice")
+                    or (float(close_prices.iloc[-1]) if len(close_prices) else None)
+                )
+
+                previous_price = (
+                    fast_info.get("previousClose")
+                    or info.get("previousClose")
+                    or info.get("regularMarketPreviousClose")
+                    or (
+                        float(close_prices.iloc[-2])
+                        if len(close_prices) >= 2
+                        else None
+                    )
+                )
+
+                if current_price is None:
+                    continue
+
+                selected_symbol = candidate
+                price = f"{float(current_price):,.2f}"
+                change_value = 0.0
+
+                if previous_price:
+                    change_value = round(
+                        ((float(current_price) - float(previous_price)) / float(previous_price)) * 100,
+                        2,
+                    )
+
+                display_symbol = candidate.replace(".NS", "").replace(".BO", "")
+                change_percent = f"{change_value:+.2f}%"
+
+                details = {
+                    "symbol": candidate,
+                    "name": info.get("longName") or info.get("shortName") or display_symbol,
+                    "price": price,
+                    "price_change": change_percent,
+                    "price_change_value": change_value,
+                }
+
+                break
+
+            except Exception as error:
+                print("Dashboard yfinance snapshot error:", error)
+
+    display_symbol = selected_symbol.replace(".NS", "").replace(".BO", "")
+
+    if not details:
+        return {
+            "symbol": display_symbol,
+            "name": display_symbol,
+            "price": "N/A",
+            "change_percent": "N/A",
+            "change_value": 0.0,
+            "signal": "HOLD",
+            "is_live": False,
+        }
+
+    change_percent = details.get("price_change", "+0.00%")
+    change_value = details.get("price_change_value")
+
+    if change_value is None:
+        change_value = parse_percent_value(change_percent)
+
+    if change_value >= 1.5:
+        signal = "BUY"
+    elif change_value <= -1.5:
+        signal = "WAIT"
+    else:
+        signal = "HOLD"
+
+    return {
+        "symbol": display_symbol,
+        "name": details.get("name", display_symbol),
+        "price": details.get("price", "N/A"),
+        "change_percent": change_percent,
+        "change_value": change_value,
+        "signal": signal,
+        "is_live": details.get("price", "N/A") != "N/A",
+    }
+
+
+def get_dashboard_batch_snapshots(symbols):
+    if not symbols:
+        return []
+
+    unique_symbols = list(dict.fromkeys(symbols))
+
+    name_lookup = {
+        stock["symbol"]: stock["name"]
+        for stock in POPULAR_STOCKS
+    }
+
+    snapshots = []
+
+    try:
+        data = yf.download(
+            tickers=unique_symbols,
+            period="5d",
+            interval="1d",
+            group_by="ticker",
+            auto_adjust=False,
+            progress=False,
+            threads=True,
+        )
+
+        for symbol in unique_symbols:
+            try:
+                if len(unique_symbols) == 1:
+                    history = data
+                else:
+                    history = data[symbol]
+
+                close_prices = history["Close"].dropna()
+
+                if close_prices.empty:
+                    continue
+
+                current_price = float(close_prices.iloc[-1])
+                previous_price = (
+                    float(close_prices.iloc[-2])
+                    if len(close_prices) >= 2
+                    else current_price
+                )
+
+                change_value = 0.0
+
+                if previous_price:
+                    change_value = round(
+                        ((current_price - previous_price) / previous_price) * 100,
+                        2,
+                    )
+
+                if change_value >= 1.5:
+                    signal = "BUY"
+                elif change_value <= -1.5:
+                    signal = "WAIT"
+                else:
+                    signal = "HOLD"
+
+                display_symbol = symbol.replace(".NS", "").replace(".BO", "")
+
+                snapshots.append(
+                    {
+                        "symbol": display_symbol,
+                        "name": name_lookup.get(symbol, display_symbol),
+                        "price": f"{current_price:,.2f}",
+                        "change_percent": f"{change_value:+.2f}%",
+                        "change_value": change_value,
+                        "signal": signal,
+                        "is_live": True,
+                    }
+                )
+
+            except Exception as error:
+                print(f"Dashboard batch symbol error for {symbol}:", error)
+
+    except Exception as error:
+        print("Dashboard batch snapshot error:", error)
+
+    return snapshots
 
 
 # ==================================================
@@ -263,8 +624,8 @@ def dashboard():
     # Get current NIFTY and SENSEX values
     market = StockService.get_market_data()
 
-    # Get interactive market chart
-    market_chart = StockService.get_market_chart("6mo")
+    # Chart loads async from /api/dashboard-market-chart so dashboard opens fast.
+    market_chart = None
 
     # ==========================================
     # DASHBOARD CARD INFORMATION
@@ -279,6 +640,100 @@ def dashboard():
         "sensex": market["sensex"],
         "sensex_change": market["status"],
     }
+
+    user_id = getattr(current_user, "id", None)
+    watchlist_stocks = (
+        Watchlist.query.filter_by(user_id=user_id).all()
+        if user_id
+        else []
+    )
+    watchlist_symbols = [stock.symbol for stock in watchlist_stocks]
+    holding_symbols = watchlist_symbols[:5]
+    snapshot_cache = {}
+
+    def cached_stock_snapshot(symbol):
+        if symbol not in snapshot_cache:
+            snapshot_cache[symbol] = get_dashboard_stock_snapshot(symbol)
+
+        return snapshot_cache[symbol].copy()
+
+    if not holding_symbols:
+        holding_symbols = [
+            "RELIANCE.NS",
+            "TCS.NS",
+            "INFY.NS",
+            "HDFCBANK.NS",
+            "SBIN.NS",
+        ]
+
+    holdings = []
+
+    for index, symbol in enumerate(holding_symbols):
+        try:
+            snapshot = cached_stock_snapshot(symbol)
+        except Exception as error:
+            print("Dashboard holding error:", error)
+            snapshot = {
+                "symbol": symbol.replace(".NS", "").replace(".BO", ""),
+                "name": symbol,
+                "price": "N/A",
+                "change_percent": "+0.00%",
+                "change_value": 0.0,
+                "signal": "HOLD",
+            }
+
+        snapshot["weight"] = [28, 22, 18, 17, 15][index % 5]
+        holdings.append(snapshot)
+
+    live_holdings = [stock for stock in holdings if stock.get("is_live")]
+    portfolio_value = sum(parse_price_value(stock.get("price")) for stock in live_holdings)
+    average_change = (
+        sum(stock.get("change_value", 0.0) for stock in live_holdings) / len(live_holdings)
+        if live_holdings
+        else 0.0
+    )
+
+    if live_holdings:
+        dashboard_data["portfolio_value"] = f"₹{portfolio_value:,.2f}"
+        dashboard_data["today_change"] = f"{average_change:+.2f}%"
+
+    live_movers = get_dashboard_batch_snapshots(MARKET_WATCH_SYMBOLS)
+    recommended_pool = random.sample(
+        live_movers,
+        min(8, len(live_movers)),
+    )
+
+    recommended_stocks = list(recommended_pool)
+
+    if len(recommended_stocks) < 4:
+        existing_symbols = {stock["symbol"] for stock in recommended_stocks}
+        fill_stocks = [
+            stock
+            for stock in sorted(
+                live_movers,
+                key=lambda item: item["change_value"],
+                reverse=True,
+            )
+            if stock["symbol"] not in existing_symbols
+        ]
+        recommended_stocks.extend(fill_stocks[: 4 - len(recommended_stocks)])
+
+    recommended_stocks = sorted(
+        recommended_stocks,
+        key=lambda stock: stock["change_value"],
+        reverse=True,
+    )[:4]
+
+    top_gainers = sorted(
+        [stock for stock in live_movers if stock["change_value"] > 0],
+        key=lambda stock: stock["change_value"],
+        reverse=True,
+    )[:3]
+
+    top_losers = sorted(
+        [stock for stock in live_movers if stock["change_value"] < 0],
+        key=lambda stock: stock["change_value"],
+    )[:3]
 
 
     # ==========================================
@@ -342,6 +797,10 @@ def dashboard():
         data=dashboard_data,
         market_chart=market_chart,
         market_news=market_news,
+        holdings=holdings,
+        recommended_stocks=recommended_stocks,
+        top_gainers=top_gainers,
+        top_losers=top_losers,
     )
 
 
@@ -453,6 +912,118 @@ def stock_search():
 
 
 # ==================================================
+# ASK AI STOCK ASSISTANT
+# ==================================================
+
+
+@app.route("/api/ask-ai", methods=["POST"])
+@login_required
+def ask_ai():
+
+    payload = request.get_json(silent=True) or {}
+    question = (payload.get("question") or "").strip()
+
+    if not question:
+        return jsonify(
+            {
+                "success": False,
+                "message": "Please enter a stock question.",
+            }
+        ), 400
+
+    api_key = app.config.get("OPENROUTER_API_KEY")
+
+    if not api_key:
+        return jsonify(
+            {
+                "success": False,
+                "message": (
+                    "OpenRouter API key is not configured. "
+                    "Add OPENROUTER_API_KEY in your .env file."
+                ),
+            }
+        ), 500
+
+    detected_symbol = detect_stock_from_question(question)
+    stock_context = get_ai_stock_context(detected_symbol)
+
+    system_prompt = (
+        "You are InvestIQ, an AI-powered investment intelligence assistant. "
+        "Answer stock-market questions in concise Hinglish or English based on "
+        "the user's language. Use the supplied live market context when available. "
+        "Keep answers practical: trend, risk, support/resistance or what to watch. "
+        "Do not promise guaranteed returns. Add a short educational disclaimer "
+        "when giving buy/sell style opinions."
+    )
+
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": request.host_url.rstrip("/"),
+                "X-Title": "InvestIQ",
+            },
+            json={
+                "model": "openai/gpt-4o",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Live context:\n{stock_context}\n\n"
+                            f"User question:\n{question}"
+                        ),
+                    },
+                ],
+                "temperature": 0.4,
+                "max_tokens": 450,
+            },
+            timeout=25,
+        )
+
+        response.raise_for_status()
+        ai_data = response.json()
+        answer = (
+            ai_data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+            .strip()
+        )
+
+        if not answer:
+            raise ValueError("Empty AI response")
+
+        return jsonify(
+            {
+                "success": True,
+                "answer": answer,
+                "symbol": detected_symbol,
+            }
+        )
+
+    except Exception as error:
+        print("Ask AI Error:", error)
+
+        fallback_answer = (
+            "AI response abhi unavailable hai. "
+            f"{stock_context} "
+            "Price trend, volume aur recent news check karke decision lena better rahega. "
+            "This is educational information, financial advice nahi."
+        )
+
+        return jsonify(
+            {
+                "success": False,
+                "answer": fallback_answer,
+                "symbol": detected_symbol,
+                "message": "AI service temporarily unavailable.",
+            }
+        ), 503
+
+
+# ==================================================
 # STOCK ANALYSIS
 # ==================================================
 
@@ -498,7 +1069,7 @@ def logout():
 
     logout_user()
 
-    return redirect(url_for("login"))
+    return redirect(url_for("landing"))
 
 
 # ==================================================
@@ -1041,4 +1612,4 @@ def dashboard_market_chart():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

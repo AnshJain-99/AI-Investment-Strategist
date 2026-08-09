@@ -1,60 +1,259 @@
 {% extends "base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}InvestIQ{% endblock %}
 
 {% block auth %}
-
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 
-<div class="auth-container login-workbench">
+<div class="investiq-landing">
+    <nav class="landing-nav">
+        <a href="{{ url_for('landing') }}" class="landing-brand">
+            <span class="brand-dots" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i>
+            </span>
+            <strong>InvestIQ</strong>
+        </a>
 
-    <div class="workbench-shell">
-
-        <nav class="workbench-nav">
-            <a href="/" class="workbench-brand">
-                <span class="brand-dots" aria-hidden="true">
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i><i></i><i></i>
-                    <i></i><i></i><i></i>
-                </span>
-                <strong>InvestIQ</strong>
-            </a>
-
-            <div class="workbench-actions">
-                <a href="{{ url_for('login') }}">Log In</a>
-                <a href="{{ url_for('register') }}" class="demo-pill">Get Started</a>
-            </div>
-        </nav>
-
-        <div class="workbench-bg" aria-hidden="true">
-            <span class="grid-line vertical left"></span>
-            <span class="grid-line vertical right"></span>
-            <span class="grid-line horizontal"></span>
-            <span class="corner-curve curve-left"></span>
-            <span class="corner-curve curve-right"></span>
-            <span class="wash wash-purple"></span>
-            <span class="wash wash-gold"></span>
+        <div class="landing-links">
+            <a href="#platform">Platform</a>
+            <a href="#insights">Insights</a>
+            <a href="#security">Security</a>
+            <a href="#faq">FAQ</a>
         </div>
 
-        <main class="workbench-hero">
-            <section class="hero-copy">
-                <h3>
-                    InvestIQ
-                    <span>AI-Powered Investment Intelligence</span>
-                </h3>
+        <div class="landing-actions">
+            <a href="{{ url_for('login') }}">Log In</a>
+            <a href="{{ url_for('register') }}" class="landing-pill">Get Started</a>
+        </div>
+    </nav>
 
+    <main>
+        <section class="landing-hero">
+            <div class="hero-kicker">AI-Powered Investment Intelligence</div>
+            <h1>Invest with Confidence, Grow with Purpose</h1>
+            <p>
+                Track live markets, compare stocks and manage smarter portfolios
+                with intelligent signals built for focused investors.
+            </p>
+
+            <div class="hero-actions">
+                <a href="{{ url_for('register') }}" class="landing-pill">Get Started Today</a>
+                <a href="{{ url_for('login') }}" class="outline-pill">View Live Demo</a>
+            </div>
+
+            <div class="hero-dashboard" aria-label="Investment dashboard preview">
+                <div class="dash-sidebar">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="dash-main">
+                    <div class="dash-topline">
+                        <strong>Your Portfolio</strong>
+                        <small>Live Market</small>
+                    </div>
+                    <div class="dash-value">
+                        <span>Portfolio Value</span>
+                        <strong>₹8,42,180</strong>
+                    </div>
+                    <div class="mini-line-chart">
+                        <svg viewBox="0 0 520 170" role="img" aria-label="Portfolio trend">
+                            <path d="M18 126 C74 126 91 91 132 94 S202 128 248 94 S319 43 371 61 S443 95 502 38"></path>
+                            <path class="chart-glow" d="M18 126 C74 126 91 91 132 94 S202 128 248 94 S319 43 371 61 S443 95 502 38"></path>
+                        </svg>
+                    </div>
+                    <div class="dash-metrics">
+                        <span><b>+18.42%</b> Return</span>
+                        <span><b>63%</b> Confidence</span>
+                        <span><b>12</b> Tracked</span>
+                    </div>
+                </div>
+                <div class="dash-side-card">
+                    <span>Allocation</span>
+                    <div class="donut"></div>
+                    <strong>Balanced</strong>
+                </div>
+            </div>
+        </section>
+
+        <div class="press-row" aria-label="Platform highlights">
+            <span>Live NSE/BSE data</span>
+            <span>AI recommendations</span>
+            <span>Portfolio alerts</span>
+            <span>Stock comparison</span>
+            <span>Watchlist tracking</span>
+        </div>
+
+        <section class="landing-section centered" id="platform">
+            <div class="section-kicker">Platform</div>
+            <h2>Centralized Investment Management</h2>
+            <p>Connect your research, watchlist and portfolio actions in one clean workflow.</p>
+
+            <div class="feature-grid">
+                <article>
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <h3>Live Market Signals</h3>
+                    <p>Follow indices, price movement and market updates from one dashboard.</p>
+                </article>
+                <article>
+                    <i class="bi bi-intersect"></i>
+                    <h3>Compare Stocks</h3>
+                    <p>Line up two or three stocks to inspect sector and performance strength.</p>
+                </article>
+                <article>
+                    <i class="bi bi-stars"></i>
+                    <h3>AI Confidence</h3>
+                    <p>Use trend, risk and volume context before deciding your next move.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="split-showcase" id="insights">
+            <div class="showcase-visual">
+                <div class="preview-card compact">
+                    <span>NIFTY Trend</span>
+                    <svg viewBox="0 0 320 130">
+                        <path d="M12 98 C58 95 75 58 113 64 S172 111 211 76 S252 25 304 44"></path>
+                    </svg>
+                </div>
+                <div class="preview-card allocation-card">
+                    <span>Portfolio Growth</span>
+                    <div class="bars">
+                        <i style="height:44%"></i><i style="height:68%"></i>
+                        <i style="height:58%"></i><i style="height:82%"></i>
+                        <i style="height:96%"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="showcase-copy">
+                <div class="section-kicker">Insights</div>
+                <h2>Deep insights, smarter strategies.</h2>
                 <p>
-                    Track markets, compare stocks and manage your investment workflow
-                    with AI-powered investment intelligence.
+                    AI-backed summaries turn live stock movement into simple buy,
+                    hold or wait signals with clear risk context.
                 </p>
+                <a href="{{ url_for('register') }}" class="mini-pill">Get Started Today</a>
+            </div>
+        </section>
 
-            </section>
+        <section class="split-showcase reverse">
+            <div class="showcase-copy">
+                <div class="section-kicker">Performance</div>
+                <h2>Track performance at a glance.</h2>
+                <p>
+                    Monitor portfolio value, best movers and watchlist changes
+                    without jumping across screens.
+                </p>
+                <a href="{{ url_for('login') }}" class="mini-pill">Open Dashboard</a>
+            </div>
+            <div class="showcase-visual">
+                <div class="floating-watchlist">
+                    <strong>Effortless Asset Management</strong>
+                    <span><b class="red"></b> Reliance <em>₹1,430.10</em></span>
+                    <span><b></b> Infosys <em>₹1,492.45</em></span>
+                    <span><b></b> HDFC Bank <em>₹1,711.20</em></span>
+                </div>
+                <div class="preview-card performance-card">
+                    <span>Performance</span>
+                    <div class="bars color-bars">
+                        <i style="height:72%"></i><i style="height:91%"></i>
+                        <i style="height:63%"></i><i style="height:82%"></i>
+                        <i style="height:56%"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        </main>
+        <section class="landing-section assistant-section">
+            <div class="section-kicker">Assistant</div>
+            <h2>InvestIQ with an AI assistant</h2>
+            <p>
+                Identify opportunities, summarize news and keep your portfolio
+                strategy organized around your risk profile.
+            </p>
 
+            <div class="assistant-map">
+                <article><i class="bi bi-lightning-charge"></i><span>Personalized Signals</span></article>
+                <article><i class="bi bi-shield-check"></i><span>Smart Risk Checks</span></article>
+                <div class="assistant-core">IQ</div>
+                <article><i class="bi bi-activity"></i><span>Portfolio Monitoring</span></article>
+                <article><i class="bi bi-bell"></i><span>Market Alerts</span></article>
+            </div>
+        </section>
 
-    </div>
+        <section class="split-showcase" id="security">
+            <div class="showcase-copy">
+                <div class="section-kicker">Security</div>
+                <h2>Portfolio discipline with clear controls.</h2>
+                <p>
+                    Keep profile preferences, strategy settings and reset flows
+                    working cleanly with OTP verification support.
+                </p>
+                <a href="{{ url_for('register') }}" class="mini-pill">Create Account</a>
+            </div>
+            <div class="security-visual" aria-hidden="true">
+                <i class="bi bi-lock"></i>
+                <span></span>
+            </div>
+        </section>
 
+        <section class="landing-section testimonials">
+            <h2>What investors say.</h2>
+            <div class="testimonial-row">
+                <article>
+                    <p>"The dashboard makes my watchlist and portfolio review much faster."</p>
+                    <strong>Ansh Jain</strong>
+                    <span>Investor</span>
+                </article>
+                <article>
+                    <p>"The compare screen and live search make research feel focused."</p>
+                    <strong>Arsh Singh</strong>
+                    <span>Investor</span>
+                </article>
+                <article>
+                    <p>"Clean UI, useful alerts and AI summaries in one place."</p>
+                    <strong>Yash Sikarwar</strong>
+                    <span>Investor</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section faq-section" id="faq">
+            <div class="section-kicker">FAQ</div>
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-list">
+                <details open>
+                    <summary>How can I track live stock data?</summary>
+                    <p>Use the search bar after login to open any NSE stock analysis page with live price context.</p>
+                </details>
+                <details>
+                    <summary>Can I compare multiple stocks?</summary>
+                    <p>Yes, the compare page supports selecting multiple stocks and reviewing their performance.</p>
+                </details>
+                <details>
+                    <summary>Does forgot password use OTP?</summary>
+                    <p>Yes, reset flow sends an OTP to email when SMTP settings are configured.</p>
+                </details>
+            </div>
+        </section>
+
+        <section class="final-cta">
+            <div class="section-kicker">Get Started</div>
+            <h2>Think better with InvestIQ</h2>
+            <a href="{{ url_for('register') }}" class="landing-pill">Create Free Account</a>
+        </section>
+    </main>
+
+    <footer class="landing-footer">
+        <div>
+            <strong>InvestIQ</strong>
+            <p>AI-Powered Investment Intelligence</p>
+        </div>
+        <div class="footer-links">
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}">Register</a>
+            <a href="#faq">FAQ</a>
+        </div>
+    </footer>
 </div>
-
 {% endblock %}

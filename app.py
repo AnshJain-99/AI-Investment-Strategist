@@ -32,6 +32,22 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 
+POPULAR_STOCKS = [
+    {"symbol": "RELIANCE.NS", "display_symbol": "RELIANCE", "name": "Reliance Industries", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "TCS.NS", "display_symbol": "TCS", "name": "Tata Consultancy Services", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "INFY.NS", "display_symbol": "INFY", "name": "Infosys Limited", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "HDFCBANK.NS", "display_symbol": "HDFCBANK", "name": "HDFC Bank", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "ICICIBANK.NS", "display_symbol": "ICICIBANK", "name": "ICICI Bank", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "SBIN.NS", "display_symbol": "SBIN", "name": "State Bank of India", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "BHARTIARTL.NS", "display_symbol": "BHARTIARTL", "name": "Bharti Airtel", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "ITC.NS", "display_symbol": "ITC", "name": "ITC Limited", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "LT.NS", "display_symbol": "LT", "name": "Larsen & Toubro", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "AXISBANK.NS", "display_symbol": "AXISBANK", "name": "Axis Bank", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "MARUTI.NS", "display_symbol": "MARUTI", "name": "Maruti Suzuki", "exchange": "NSE", "type": "EQUITY"},
+    {"symbol": "TATAMOTORS.NS", "display_symbol": "TATAMOTORS", "name": "Tata Motors", "exchange": "NSE", "type": "EQUITY"},
+]
+
+
 # ==================================================
 # DATABASE
 # ==================================================
@@ -107,7 +123,7 @@ def send_otp_email(recipient, otp):
         return False
 
     message = EmailMessage()
-    message["Subject"] = "Your AI Investment Strategist OTP"
+    message["Subject"] = "Your InvestIQ OTP"
     message["From"] = mail_sender
     message["To"] = recipient
     message.set_content(
@@ -345,6 +361,17 @@ def stock_search():
     if len(query) < 1:
         return jsonify([])
 
+    def fallback_suggestions():
+        lowered_query = query.lower()
+
+        return [
+            stock
+            for stock in POPULAR_STOCKS
+            if lowered_query in stock["symbol"].lower()
+            or lowered_query in stock["display_symbol"].lower()
+            or lowered_query in stock["name"].lower()
+        ][:8]
+
     try:
         yahoo_url = "https://query2.finance.yahoo.com/v1/finance/search"
 
@@ -417,12 +444,12 @@ def stock_search():
 
         suggestions.sort(key=lambda item: 0 if item["symbol"].endswith(".NS") else 1)
 
-        return jsonify(suggestions[:8])
+        return jsonify(suggestions[:8] or fallback_suggestions())
 
     except Exception as error:
         print("Stock Search Error:", error)
 
-        return jsonify([])
+        return jsonify(fallback_suggestions())
 
 
 # ==================================================
@@ -908,18 +935,33 @@ def stock_live(symbol):
 
     try:
 
+        if "." not in symbol:
+            symbol = f"{symbol.upper()}.NS"
+        else:
+            symbol = symbol.upper()
+
         stock = yf.Ticker(symbol)
 
-        info = stock.info
+        try:
+            info = stock.info or {}
+        except Exception:
+            info = {}
+
+        try:
+            fast_info = stock.fast_info or {}
+        except Exception:
+            fast_info = {}
 
         history = stock.history(period="5d")
 
         history = history.dropna(subset=["Close"])
 
-        if history.empty:
+        current = fast_info.get("lastPrice")
+
+        if history.empty and not current:
             raise Exception("No price data")
 
-        current = float(history["Close"].iloc[-1])
+        current = float(current or history["Close"].iloc[-1])
 
         previous = float(history["Close"].iloc[-2]) if len(history) >= 2 else current
 

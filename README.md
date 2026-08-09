@@ -1,6 +1,6 @@
-# 📈 AI Investment Strategist
+# 📈 InvestIQ
 
-AI Investment Strategist is a modern web-based financial analysis platform designed to simplify stock market research and help users make informed investment decisions.
+InvestIQ is a modern web-based financial analysis platform designed to simplify stock market research and help users make informed investment decisions.
 
 The platform provides real-time Indian stock market data, detailed company fundamentals, interactive historical price charts, stock comparison tools, financial performance analysis, and AI-powered investment insights through a clean and user-friendly interface.
 
@@ -66,7 +66,7 @@ The comparison charts are generated dynamically using real financial data, makin
 
 ## 🎯 Project Objective
 
-The main objective of AI Investment Strategist is to simplify complex stock market information and provide users with an easy-to-understand platform for stock research and financial analysis.
+The main objective of InvestIQ is to simplify complex stock market information and provide users with an easy-to-understand platform for stock research and financial analysis.
 
 The application combines market data, company fundamentals, interactive visualizations, stock comparisons, and AI-based insights to support better and more informed investment research.
 

@@ -53,7 +53,17 @@ class StockService:
 
             ticker = yf.Ticker(symbol)
 
-            info = ticker.info
+            try:
+                info = ticker.info or {}
+            except Exception:
+                info = {}
+
+            try:
+                fast_info = ticker.fast_info or {}
+            except Exception:
+                fast_info = {}
+
+            history = ticker.history(period="5d")
 
             # Day High
             day_high = format_number(info.get("dayHigh"))
@@ -80,7 +90,7 @@ class StockService:
                 except (TypeError, ValueError):
                     return "N/A"
 
-            volume = format_volume(info.get("volume"))
+            volume = format_volume(info.get("volume") or fast_info.get("lastVolume"))
 
             # # Market State
             # market_state = (
@@ -92,17 +102,25 @@ class StockService:
             # CURRENT STOCK PRICE
             # -------------------------------
 
-            price = info.get("currentPrice") or info.get("regularMarketPrice")
+            price_value = (
+                info.get("currentPrice")
+                or info.get("regularMarketPrice")
+                or fast_info.get("lastPrice")
+            )
 
-            if price is not None:
+            if not price_value and not history.empty:
+                close_prices = history["Close"].dropna()
 
-                price = f"{price:,.2f}"
+                if not close_prices.empty:
+                    price_value = float(close_prices.iloc[-1])
+
+            if price_value is not None:
+
+                price = f"{float(price_value):,.2f}"
 
             else:
 
                 price = "N/A"
-
-            history = ticker.history(period="5d")
 
             price_change = "0.00%"
             price_change_value = 0
@@ -161,16 +179,16 @@ class StockService:
 
             return {
                 "symbol": symbol,
-                "name": info.get("longName", symbol),
+                "name": info.get("longName") or info.get("shortName") or symbol,
                 "price": price,
                 "price_change": price_change,
                 "price_change_value": price_change_value,
                 "price_change_color": price_change_color,
-                "day_high": day_high,
-                "day_low": day_low,
+                "day_high": day_high if day_high != "N/A" else format_number(fast_info.get("dayHigh")),
+                "day_low": day_low if day_low != "N/A" else format_number(fast_info.get("dayLow")),
                 "volume": volume,
                 # "market_state": market_state,
-                "market_cap": format_market_cap(info.get("marketCap")),
+                "market_cap": format_market_cap(info.get("marketCap") or fast_info.get("marketCap")),
                 "pe": format_number(info.get("trailingPE")),
                 "eps": format_number(info.get("trailingEps")),
                 "sector": info.get("sector", "N / A"),
@@ -179,8 +197,8 @@ class StockService:
                 "roe": roe,
                 "dividend": dividend,
                 "employees": format_integer(info.get("fullTimeEmployees")),
-                "high52": format_number(info.get("fiftyTwoWeekHigh")),
-                "low52": format_number(info.get("fiftyTwoWeekLow")),
+                "high52": format_number(info.get("fiftyTwoWeekHigh") or fast_info.get("yearHigh")),
+                "low52": format_number(info.get("fiftyTwoWeekLow") or fast_info.get("yearLow")),
                 "website": info.get("website", "N / A"),
             }
 
@@ -571,6 +589,21 @@ class StockService:
     @staticmethod
     def get_ai_analysis(symbol):
 
+        def fallback_analysis():
+            return {
+                "overall": 50,
+                "fundamental": 50,
+                "technical": 50,
+                "signal": "HOLD",
+                "confidence": 50,
+                "summary": "Live AI analysis is limited because complete market data is unavailable right now. Keep this stock on watch and refresh after live data updates.",
+                "strengths": ["Stock remains trackable", "Live price feed can be refreshed"],
+                "risks": ["Incomplete live data", "Wait for stronger confirmation"],
+                "target": "N/A",
+                "stop_loss": "N/A",
+                "time_horizon": "Data pending",
+            }
+
         try:
 
             if "." not in symbol:
@@ -578,14 +611,20 @@ class StockService:
 
             ticker = yf.Ticker(symbol)
 
-            info = ticker.info
+            try:
+                info = ticker.info or {}
+            except Exception:
+                info = {}
 
             history = ticker.history(period="6mo")
 
             if history.empty:
-                return None
+                return fallback_analysis()
 
             close = history["Close"].dropna()
+
+            if close.empty:
+                return fallback_analysis()
 
             latest = float(close.iloc[-1])
 
@@ -663,7 +702,7 @@ class StockService:
             confidence = min(95, overall + 5)
             if signal == "BUY":
 
-                summary = "Strong financial performance with positive technical momentum. Suitable for medium to long-term investment."
+                summary = "AI sees supportive fundamentals and positive price momentum. This stock may suit a monitored medium-term entry."
 
                 strengths = [
                     "Healthy revenue growth",
@@ -675,7 +714,7 @@ class StockService:
 
             elif signal == "HOLD":
 
-                summary = "Company fundamentals remain stable but the current trend is neutral. Existing investors can continue holding."
+                summary = "AI sees a balanced setup. Momentum is not strong enough for an aggressive call, so monitor confirmation levels."
 
                 strengths = [
                     "Stable business",
@@ -687,7 +726,7 @@ class StockService:
 
             else:
 
-                summary = "Weak momentum and below-average financial strength indicate elevated downside risk."
+                summary = "AI sees weak momentum or below-average financial strength. Risk control is important before taking a position."
 
                 strengths = ["Large market presence"]
 
@@ -715,13 +754,7 @@ class StockService:
 
             print("AI Error:", e)
 
-            return {
-                "overall": 0,
-                "fundamental": 0,
-                "technical": 0,
-                "signal": "HOLD",
-                "confidence": 0,
-            }
+            return fallback_analysis()
 
     @staticmethod
     def get_watchlist_summary(symbols):

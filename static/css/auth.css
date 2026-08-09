@@ -67,7 +67,7 @@ body {
 }
 
 .auth-scene::before {
-    content: "AI Investment Strategist";
+    content: "InvestIQ";
     position: absolute;
     left: 68px;
     top: 44px;

@@ -22,45 +22,6 @@
     </div>
 
     <div class="dashboard-heading-side">
-        <form class="ask-ai-widget" id="askAiForm">
-            <div class="ask-ai-top">
-                <div>
-                    <span>Ask InvestIQ</span>
-                    <strong>Stock AI Assistant</strong>
-                </div>
-                <i class="bi bi-stars"></i>
-            </div>
-
-            <div class="ask-ai-input-row">
-                <input
-                    type="text"
-                    id="askAiQuestion"
-                    placeholder="Ask about TCS, Reliance, NIFTY..."
-                    autocomplete="off"
-                    required
-                >
-                <button type="submit" title="Ask AI">
-                    <i class="bi bi-send"></i>
-                </button>
-            </div>
-
-            <!-- <div class="ask-ai-suggestions">
-                <button type="button" data-question="TCS stock buy karna chahiye?">
-                    TCS view
-                </button>
-                <button type="button" data-question="Reliance ka trend batao">
-                    Reliance trend
-                </button>
-            </div>
-
-            <div class="ask-ai-answer" id="askAiAnswer">
-                <div class="chat-message bot">
-                    <i class="bi bi-lightning-charge"></i>
-                    <span>Stock ka naam likho aur pucho: buy, hold ya wait?</span>
-                </div>
-            </div> -->
-        </form>
-
         <a href="{{ url_for('watchlist') }}" class="dashboard-heading-action">
             <i class="bi bi-bookmark-star"></i>
             Watchlist
@@ -362,6 +323,53 @@
 </section>
 
 </div>
+
+<button
+    type="button"
+    class="floating-chat-toggle"
+    id="askAiToggle"
+    aria-label="Open InvestIQ AI assistant"
+    aria-controls="askAiWidget"
+    aria-expanded="false"
+>
+    <i class="bi bi-chat-dots-fill"></i>
+    <span>Ask InvestIQ</span>
+</button>
+
+<section class="ask-ai-widget floating-chatbot" id="askAiWidget" aria-hidden="true">
+    <div class="ask-ai-top">
+        <div>
+            <span>Ask InvestIQ</span>
+            <strong>Stock AI Assistant</strong>
+        </div>
+        <div class="floating-chat-actions">
+            <i class="bi bi-stars"></i>
+            <button type="button" id="askAiClose" aria-label="Close chat">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="ask-ai-answer" id="askAiAnswer" aria-live="polite">
+        <div class="chat-message bot">
+            <i class="bi bi-lightning-charge"></i>
+            <span>Hello! Ask me about a stock, NIFTY 50, SENSEX, trends, or investment risks.</span>
+        </div>
+    </div>
+
+    <form id="askAiForm" class="ask-ai-input-row">
+        <input
+            type="text"
+            id="askAiQuestion"
+            placeholder="Ask a market question..."
+            autocomplete="off"
+            required
+        >
+        <button type="submit" title="Send message" aria-label="Send message">
+            <i class="bi bi-send"></i>
+        </button>
+    </form>
+</section>
 
 {% endblock %}
 

@@ -1367,6 +1367,8 @@ a:hover {
 ===================================================== */
 
 .investiq-landing {
+    position: relative;
+    isolation: isolate;
     min-height: 100vh;
     overflow-x: hidden;
     color: #17142b;
@@ -1374,6 +1376,275 @@ a:hover {
         radial-gradient(circle at 12% 9%, rgba(124, 58, 237, .14), transparent 22%),
         radial-gradient(circle at 88% 18%, rgba(167, 139, 250, .13), transparent 24%),
         linear-gradient(180deg, #ffffff 0%, #f7f2ff 46%, #ffffff 100%);
+}
+
+/* Continue the subtle market texture through the entire landing experience. */
+.investiq-landing main {
+    position: relative;
+    overflow: hidden;
+    background-image:
+        radial-gradient(circle at 5% 29%, rgba(196, 181, 253, .20), transparent 19%),
+        radial-gradient(circle at 96% 55%, rgba(167, 139, 250, .16), transparent 17%),
+        radial-gradient(circle at 12% 83%, rgba(221, 214, 254, .25), transparent 21%);
+}
+
+.investiq-landing main::before,
+.investiq-landing main::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.investiq-landing main::before {
+    inset: 760px 0 0;
+    opacity: .42;
+    background-image:
+        linear-gradient(rgba(124, 58, 237, .04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124, 58, 237, .04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent);
+    mask-image: linear-gradient(transparent, #000 9%, #000 91%, transparent);
+}
+
+.investiq-landing main::after {
+    right: -210px;
+    top: 1040px;
+    width: 520px;
+    height: 520px;
+    border: 1px solid rgba(124, 58, 237, .12);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 54px rgba(124, 58, 237, .025),
+        0 0 0 108px rgba(124, 58, 237, .018);
+}
+
+/* Decorative finance backdrop: intentionally subtle so hero content stays legible. */
+.landing-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 74% 18% at 50% 0%, rgba(56, 38, 137, .18), transparent 74%),
+        radial-gradient(ellipse 52% 9% at 50% 34%, rgba(124, 58, 237, .12), transparent 76%),
+        radial-gradient(ellipse 52% 9% at 50% 66%, rgba(124, 58, 237, .10), transparent 76%),
+        radial-gradient(ellipse 52% 9% at 50% 94%, rgba(124, 58, 237, .12), transparent 76%),
+        linear-gradient(180deg, rgba(220, 214, 255, .34) 0%, transparent 13%, transparent 84%, rgba(225, 218, 255, .28) 100%);
+}
+
+.landing-starfield {
+    position: absolute;
+    inset: 0;
+    opacity: .54;
+    background-image:
+        radial-gradient(circle at 12% 10%, rgba(92, 72, 191, .4) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 81% 16%, rgba(92, 72, 191, .3) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 41% 43%, rgba(92, 72, 191, .3) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 91% 58%, rgba(92, 72, 191, .3) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 19% 76%, rgba(92, 72, 191, .28) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 63% 91%, rgba(92, 72, 191, .3) 0 1px, transparent 1.6px);
+    background-size: 340px 340px, 470px 470px, 390px 390px, 510px 510px, 430px 430px, 560px 560px;
+}
+
+.landing-aurora {
+    position: absolute;
+    display: block;
+    width: min(66vw, 900px);
+    height: 360px;
+    border-radius: 50%;
+    filter: blur(58px);
+    opacity: .34;
+    will-change: transform;
+    animation: aurora-drift 15s ease-in-out infinite alternate;
+}
+
+.aurora-indigo {
+    top: 4%;
+    left: 17%;
+    background: radial-gradient(ellipse, rgba(56, 34, 162, .62), rgba(94, 74, 215, .24) 44%, transparent 72%);
+}
+
+.aurora-blue {
+    top: 35%;
+    right: -18%;
+    width: min(54vw, 720px);
+    background: radial-gradient(ellipse, rgba(102, 84, 234, .34), transparent 70%);
+    animation-delay: -5s;
+}
+
+.aurora-lilac {
+    top: 68%;
+    left: -20%;
+    width: min(58vw, 760px);
+    background: radial-gradient(ellipse, rgba(159, 133, 241, .32), transparent 70%);
+    animation-delay: -10s;
+}
+
+@keyframes aurora-drift {
+    from { transform: translate3d(0, -12px, 0) scale(.96); }
+    to { transform: translate3d(24px, 20px, 0) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-aurora { animation: none; }
+}
+
+.landing-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .52;
+    background-image:
+        linear-gradient(rgba(124, 58, 237, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124, 58, 237, .055) 1px, transparent 1px);
+    background-size: 52px 52px;
+    -webkit-mask-image: linear-gradient(transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(transparent, #000 5%, #000 95%, transparent);
+}
+
+/* Quiet market graphics run behind every landing section, not inside the cards. */
+.market-ghost {
+    position: absolute;
+    z-index: 0;
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    width: 245px;
+    height: 170px;
+    padding: 22px;
+    opacity: .32;
+    border: 1px solid rgba(124, 58, 237, .18);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, .16);
+    box-shadow: 0 24px 80px rgba(91, 33, 182, .05);
+    transform: rotate(-6deg);
+}
+
+.market-ghost span {
+    flex: 1;
+    min-height: 32px;
+    border-radius: 7px 7px 3px 3px;
+    background: linear-gradient(180deg, rgba(124, 58, 237, .8), rgba(196, 181, 253, .18));
+}
+
+.market-ghost span:nth-child(2) { height: 62%; }
+.market-ghost span:nth-child(3) { height: 42%; }
+.market-ghost span:nth-child(4) { height: 80%; }
+.market-ghost span:nth-child(5) { height: 56%; }
+.market-ghost span:nth-child(6) { height: 90%; }
+
+.market-ghost-left { top: 22%; left: -105px; }
+.market-ghost-right { top: 41%; right: -90px; }
+.market-ghost-mid { top: 61%; left: -110px; transform: rotate(7deg); }
+.market-ghost-bottom { top: 82%; right: -92px; transform: rotate(5deg); }
+
+.market-line-ghost {
+    display: grid;
+    place-items: center;
+    width: 360px;
+    height: 180px;
+    padding: 0;
+    overflow: hidden;
+    background:
+        linear-gradient(90deg, transparent 49.5%, rgba(124, 58, 237, .12) 50%, transparent 50.5%),
+        linear-gradient(rgba(124, 58, 237, .08) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 42px;
+}
+
+.market-line-ghost svg { display: none; }
+
+.market-line-ghost::before,
+.market-line-ghost::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+}
+
+.market-line-ghost::before {
+    width: 104px;
+    height: 104px;
+    background: conic-gradient(#7c3aed 0 44%, #a78bfa 44% 69%, #ddd6fe 69% 84%, #ede9fe 84% 100%);
+    box-shadow: inset 0 0 0 24px rgba(255, 255, 255, .82), 0 14px 32px rgba(91, 33, 182, .12);
+}
+
+.market-line-ghost::after {
+    width: 136px;
+    height: 136px;
+    border: 1px dashed rgba(124, 58, 237, .30);
+    box-shadow: 0 0 0 14px rgba(124, 58, 237, .04);
+}
+
+.landing-trend-line {
+    position: absolute;
+    inset: 96px 0 auto;
+    width: 100%;
+    height: 680px;
+    overflow: visible;
+}
+
+.landing-trend-line path:first-of-type {
+    fill: none;
+    stroke: url(#landingTrend);
+    stroke-width: 1.5;
+}
+
+.landing-trend-line .trend-accent {
+    fill: none;
+    stroke: rgba(109, 40, 217, .16);
+    stroke-width: 8;
+    filter: blur(7px);
+}
+
+.market-orb {
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border: 1px solid rgba(124, 58, 237, .13);
+    border-radius: 50%;
+}
+
+.orb-one { left: -214px; top: 220px; }
+.orb-two { right: -170px; top: 470px; width: 350px; height: 350px; }
+
+.landing-nav,
+.landing-hero,
+.investiq-landing main,
+.landing-footer { position: relative; z-index: 1; }
+
+.investiq-landing main > * {
+    position: relative;
+    z-index: 1;
+}
+
+.landing-section,
+.split-showcase,
+.final-cta {
+    position: relative;
+}
+
+.landing-section::before,
+.split-showcase::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -55px;
+    width: min(100%, 920px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124, 58, 237, .17), transparent);
+    transform: translateX(-50%);
+}
+
+.split-showcase:nth-of-type(even)::after {
+    content: "";
+    position: absolute;
+    left: -130px;
+    top: 50%;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(124, 58, 237, .10);
+    border-radius: 50%;
+    transform: translateY(-50%);
 }
 
 .landing-nav {

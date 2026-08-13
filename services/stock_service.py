@@ -273,8 +273,7 @@ class StockService:
                     mode="lines",
                     name=symbol.replace(".NS", ""),
                     line=dict(color="#7C3AED", width=3),
-                    fill="tozeroy",
-                    fillcolor="rgba(124, 58, 237, 0.10)",
+                    fill="none",
                     hovertemplate=(
                         "<b>%{x|%d %b %Y}</b>"
                         "<br>"
@@ -304,6 +303,7 @@ class StockService:
                     title="",
                     showgrid=True,
                     gridcolor="rgba(226, 232, 240, 0.80)",
+                    rangemode="normal",
                     tickprefix="₹",
                     separatethousands=True,
                     tickfont=dict(color="#64748B", size=11),
@@ -356,19 +356,33 @@ class StockService:
                 progress=False,
                 auto_adjust=False,
                 group_by="ticker",
+                threads=False,
             )
 
-            # Check downloaded data
-
             if market_data.empty:
-
                 return None
 
-            # Get closing prices
+            def close_prices(symbol):
+                """Return one clean closing-price series for a downloaded index."""
+                try:
+                    data = market_data[symbol]
+                    close = data["Close"]
+                    # Some yfinance releases return a one-column DataFrame here.
+                    if hasattr(close, "columns"):
+                        close = close.iloc[:, 0]
+                    return close.dropna()
+                except (KeyError, IndexError, TypeError):
+                    return None
 
-            nifty_close = market_data["^NSEI"]["Close"].dropna()
+            nifty_close = close_prices("^NSEI")
+            sensex_close = close_prices("^BSESN")
 
-            sensex_close = market_data["^BSESN"]["Close"].dropna()
+            # Do not render partial or malformed Yahoo data as a misleading chart.
+            if nifty_close is None or nifty_close.empty or nifty_close.max() < 1_000:
+                return None
+
+            if sensex_close is None or sensex_close.empty or sensex_close.max() < 10_000:
+                return None
 
             # Create Plotly figure
 
@@ -386,8 +400,7 @@ class StockService:
                     name="NIFTY 50",
                     visible=True,
                     line=dict(color="#7C3AED", width=3),
-                    fill="tozeroy",
-                    fillcolor=("rgba(" "124," "58," "237," "0.08" ")"),
+                    fill="none",
                     hovertemplate=(
                         "<b>NIFTY 50</b>"
                         "<br>"
@@ -411,8 +424,7 @@ class StockService:
                     name="SENSEX",
                     visible=False,
                     line=dict(color="#7C3AED", width=3),
-                    fill="tozeroy",
-                    fillcolor=("rgba(" "124," "58," "237," "0.08" ")"),
+                    fill="none",
                     hovertemplate=(
                         "<b>SENSEX</b>"
                         "<br>"
@@ -445,8 +457,10 @@ class StockService:
                 yaxis=dict(
                     title="",
                     showgrid=True,
-                    gridcolor=("rgba(" "226," "232," "240," "0.75" ")"),
+                    gridcolor="rgba(226, 232, 240, 0.75)",
+                    rangemode="normal",
                     separatethousands=True,
+                    tickformat=",.0f",
                     tickfont=dict(color="#8B8F9C", size=11),
                 ),
                 # NIFTY / SENSEX buttons
@@ -483,7 +497,7 @@ class StockService:
             return plot(
                 figure,
                 output_type="div",
-                include_plotlyjs="cdn",
+                include_plotlyjs=False,
                 config={
                     "responsive": True,
                     "displaylogo": False,
@@ -924,8 +938,11 @@ def generate_ai_summary(ai, stock):
 
     strengths = []
 
-    if stock["pe"] != "N/A" and float(stock["pe"]) < 25:
-        strengths.append("Attractive valuation")
+    try:
+        if stock["pe"] != "N/A" and float(str(stock["pe"]).replace(",", "")) < 25:
+            strengths.append("Attractive valuation")
+    except (ValueError, TypeError):
+        pass
 
     if ai["technical"] >= 75:
         strengths.append("Positive momentum")
@@ -938,8 +955,13 @@ def generate_ai_summary(ai, stock):
     if stock["roe"] == "N/A":
         risks.append("ROE data unavailable")
 
-    elif float(stock["roe"].replace("%", "")) < 10:
-        risks.append("Low return on equity")
+    else:
+        try:
+            roe_val = float(str(stock["roe"]).replace("%", "").replace("+", "").strip())
+            if roe_val < 10:
+                risks.append("Low return on equity")
+        except (ValueError, TypeError):
+            pass
 
     if ai["technical"] < 60:
         risks.append("Weak momentum")

@@ -239,7 +239,7 @@
 
     <div class="toolbar-actions">
 
-        <select class="form-select">
+        <select class="form-select" id="watchlistSort" aria-label="Sort watchlist">
 
             <option>Sort By</option>
 
@@ -251,7 +251,7 @@
 
         </select>
 
-        <select class="form-select">
+        <select class="form-select" id="watchlistFilter" aria-label="Filter watchlist">
 
             <option>All Stocks</option>
 
@@ -494,13 +494,12 @@
 
         <div class="modal-content">
 
-            <div class="modal-header">
-
-                <h5 class="modal-title">
-
-                    Add Stock
-
-                </h5>
+            <div class="modal-header add-stock-modal-header">
+                <div>
+                    <span class="add-stock-eyebrow"><i class="bi bi-plus-circle"></i> Watchlist</span>
+                    <h5 class="modal-title">Add a stock</h5>
+                    <p>Search NSE stocks and add them to your live watchlist.</p>
+                </div>
 
                 <button class="btn-close" data-bs-dismiss="modal">
 
@@ -510,11 +509,12 @@
 
             <div class="modal-body">
 
-                <div class="search-wrapper">
-
-                    <input class="form-control" id="stockSearchInput" placeholder="Search stock...">
-
+                <div class="search-wrapper add-stock-search">
+                    <i class="bi bi-search"></i>
+                    <input class="form-control" id="stockSearchInput" placeholder="Search by company or symbol, e.g. TCS">
+                    <span class="search-shortcut">NSE</span>
                 </div>
+                <p class="add-stock-hint" id="addStockHint">Start typing to find a stock.</p>
 
                 <div id="stockResults" class="stock-results">
 

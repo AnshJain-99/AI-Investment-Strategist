@@ -33,7 +33,7 @@
     >
 
 
-    <!-- Google Font -->
+    <!-- Design system fonts -->
 
     <link
         rel="preconnect"
@@ -47,7 +47,7 @@
     >
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
@@ -58,8 +58,16 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}"
     >
+    <!-- Keep this version aligned with the Plotly Python package (6.9.0). -->
+    <script src="https://cdn.plot.ly/plotly-3.7.0.min.js"></script>
+
     {% block styles %}
     {% endblock %}
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/theme.css') }}"
+    >
 
 
 </head>

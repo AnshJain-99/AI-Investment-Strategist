@@ -90,11 +90,26 @@
 
         <!-- NOTIFICATION -->
 
-        <button type="button" class="navbar-icon-button" title="Notifications">
+        <div class="notification-wrapper">
+            <button type="button" class="navbar-icon-button notification-button" id="notificationButton"
+                    title="Notifications" aria-label="Open notifications" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="notification-badge" id="notificationBadge" hidden>0</span>
+            </button>
 
-            <i class="bi bi-bell"></i>
-
-        </button>
+            <section class="notification-dropdown" id="notificationDropdown" aria-label="Live notifications">
+                <div class="notification-header">
+                    <div>
+                        <strong>Live notifications</strong>
+                        <span id="notificationUpdated">Updating market data…</span>
+                    </div>
+                    <button type="button" id="markNotificationsRead">Mark all read</button>
+                </div>
+                <div class="notification-list" id="notificationList">
+                    <div class="notification-loading"><i class="bi bi-arrow-repeat"></i> Loading live updates…</div>
+                </div>
+            </section>
+        </div>
 
 
         <!-- USER PROFILE -->
@@ -665,4 +680,88 @@
 
     });
 
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const button = document.getElementById("notificationButton");
+        const dropdown = document.getElementById("notificationDropdown");
+        const list = document.getElementById("notificationList");
+        const badge = document.getElementById("notificationBadge");
+        const updated = document.getElementById("notificationUpdated");
+        const markRead = document.getElementById("markNotificationsRead");
+        let hasLoaded = false;
+
+        function escapeHtml(value) {
+            const element = document.createElement("div");
+            element.textContent = value;
+            return element.innerHTML;
+        }
+
+        function setBadge(count) {
+            if (!badge) return;
+            const isRead = localStorage.getItem("investiqNotificationsRead") === "true";
+            badge.hidden = isRead || !count;
+            badge.textContent = count > 9 ? "9+" : count;
+        }
+
+        async function loadNotifications() {
+            if (!list) return;
+            try {
+                const response = await fetch("/api/notifications", { cache: "no-store" });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error("Notifications unavailable");
+
+                const notifications = data.notifications || [];
+                list.innerHTML = notifications.length
+                    ? notifications.map(function (item) {
+                        return `<article class="notification-item">
+                            <span class="notification-status ${item.type === "down" ? "down" : ""}"></span>
+                            <div class="notification-copy">
+                                <strong>${escapeHtml(item.title)}</strong>
+                                <p>${escapeHtml(item.detail)}</p>
+                                <time>${escapeHtml(item.time)}</time>
+                            </div>
+                        </article>`;
+                    }).join("")
+                    : '<div class="notification-empty">No live updates available right now.</div>';
+                if (updated) updated.textContent = `Updated ${data.updated_at || "just now"}`;
+                setBadge(notifications.length);
+                hasLoaded = true;
+            } catch (error) {
+                list.innerHTML = '<div class="notification-empty">Could not load live notifications. Please try again.</div>';
+                if (updated) updated.textContent = "Connection unavailable";
+            }
+        }
+
+        if (button && dropdown) {
+            button.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = dropdown.classList.toggle("show");
+                button.setAttribute("aria-expanded", String(isOpen));
+                if (isOpen) {
+                    list.innerHTML = '<div class="notification-loading"><i class="bi bi-arrow-repeat"></i> Loading live updates…</div>';
+                    loadNotifications();
+                }
+            });
+
+            dropdown.addEventListener("click", function (event) { event.stopPropagation(); });
+            document.addEventListener("click", function () {
+                dropdown.classList.remove("show");
+                button.setAttribute("aria-expanded", "false");
+            });
+        }
+
+        if (markRead) {
+            markRead.addEventListener("click", function () {
+                localStorage.setItem("investiqNotificationsRead", "true");
+                setBadge(0);
+            });
+        }
+
+        loadNotifications();
+        window.setInterval(function () {
+            if (!document.hidden && (hasLoaded || (dropdown && dropdown.classList.contains("show")))) loadNotifications();
+        }, 60000);
+    });
 </script>

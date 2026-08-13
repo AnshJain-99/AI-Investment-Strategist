@@ -410,6 +410,79 @@
     border-color: #ddd0ff;
 }
 
+.notification-wrapper {
+    position: relative;
+}
+
+.notification-button {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    padding: 0 4px;
+    color: #fff;
+    background: #ef4444;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    z-index: 5300;
+    width: min(370px, calc(100vw - 30px));
+    display: none;
+    overflow: hidden;
+    background: rgba(255, 255, 255, .97);
+    border: 1px solid #e6ddfb;
+    border-radius: 16px;
+    box-shadow: 0 24px 58px rgba(31, 20, 76, .18);
+}
+
+.notification-dropdown.show { display: block; animation: notificationDrop .18s ease both; }
+
+@keyframes notificationDrop {
+    from { opacity: 0; transform: translateY(-7px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #efebf8;
+}
+
+.notification-header strong,
+.notification-header span { display: block; }
+.notification-header strong { color: #201a3d; font-size: 14px; }
+.notification-header span { margin-top: 3px; color: #92909b; font-size: 11px; }
+.notification-header button { padding: 0; color: #6d28d9; background: none; border: 0; font-size: 11px; font-weight: 700; cursor: pointer; }
+.notification-list { max-height: 335px; overflow-y: auto; }
+.notification-item { display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #f0edf6; }
+.notification-item:last-child { border-bottom: 0; }
+.notification-status { width: 9px; height: 9px; flex: 0 0 auto; margin-top: 5px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 4px rgba(22, 163, 74, .11); }
+.notification-status.down { background: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, .1); }
+.notification-copy { min-width: 0; }
+.notification-copy strong { display: block; color: #29243e; font-size: 12px; line-height: 1.45; }
+.notification-copy p { margin: 3px 0; color: #7f7b89; font-size: 11px; }
+.notification-copy time { color: #a19cae; font-size: 10px; }
+.notification-loading, .notification-empty { padding: 30px 16px; color: #8b8696; text-align: center; font-size: 12px; }
+.notification-loading i { margin-right: 6px; color: #7c3aed; }
+
 
 /* =====================================================
    PROFILE

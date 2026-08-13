@@ -521,6 +521,49 @@
     color: #666;
 }
 
+/* Refined add-stock experience */
+#addStockModal .modal-dialog { max-width: 610px; }
+#addStockModal .modal-content {
+    overflow: hidden;
+    border: 1px solid #e8ddff;
+    border-radius: 22px;
+    box-shadow: 0 30px 85px rgba(48, 26, 114, .24);
+}
+.add-stock-modal-header {
+    align-items: flex-start;
+    padding: 24px 26px 20px;
+    background: linear-gradient(135deg, #fbf9ff, #f1ebff);
+    border-bottom: 1px solid #ebe2fb;
+}
+.add-stock-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.add-stock-modal-header .modal-title { margin: 8px 0 5px; color: #211940; font-size: 24px; font-weight: 750; }
+.add-stock-modal-header p { margin: 0; color: #777084; font-size: 13px; }
+.add-stock-search { position: relative; display: flex; align-items: center; }
+.add-stock-search > i { position: absolute; left: 16px; z-index: 1; color: #7c3aed; font-size: 16px; }
+.add-stock-search .form-control { height: 54px; padding: 0 58px 0 46px; border: 1px solid #dcd1f8; border-radius: 14px; background: #fcfbff; box-shadow: none; }
+.add-stock-search .form-control:focus { border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124, 58, 237, .12); }
+.search-shortcut { position: absolute; right: 12px; padding: 4px 7px; color: #7556bd; background: #eee8ff; border-radius: 6px; font-size: 10px; font-weight: 800; }
+.add-stock-hint { margin: 11px 3px 0; color: #90899b; font-size: 12px; }
+.stock-results { margin-top: 14px; padding: 0 2px; }
+.search-item { gap: 14px; padding: 14px 12px; border: 1px solid transparent; border-bottom-color: #f0ecf7; border-radius: 12px; transition: .2s ease; }
+.search-item:hover { background: #faf8ff; border-color: #e6dcfb; transform: translateX(2px); }
+.search-item > div::before { content: "↗"; display: inline-grid; place-items: center; float: left; width: 34px; height: 34px; margin: 2px 10px 0 0; color: #fff; background: linear-gradient(135deg, #6d3dea, #8b5cf6); border-radius: 10px; font-weight: 800; }
+.search-item strong { color: #262038; font-size: 14px; }
+.search-item small { margin-top: 2px; color: #80798b; font-size: 12px; }
+.search-item .add-stock { min-width: 70px; padding: 8px 12px; color: #fff; background: #7c3aed; border: 0; border-radius: 9px; font-size: 12px; font-weight: 700; box-shadow: 0 8px 16px rgba(124, 58, 237, .22); }
+.search-item .add-stock:hover { background: #6d28d9; }
+
+.watchlist-card[hidden] { display: none !important; }
+
 .green {
     color: #16a34a;
     font-weight: 600;

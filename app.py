@@ -3,13 +3,14 @@ import yfinance as yf
 import os
 
 # from datetime import datetime
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import feedparser
 import random
 import smtplib
 import ssl
 from email.message import EmailMessage
 from database.models import db, User, Watchlist
+from sqlalchemy.exc import IntegrityError
 
 
 from flask_bcrypt import Bcrypt
@@ -524,9 +525,12 @@ def login():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-        password = request.form["password"]
+        if not email or not password:
+            flash("Email and password are required.", "danger")
+            return render_template("login_form.html")
 
         user = db.session.execute(
             db.select(User).filter_by(email=email)
@@ -554,13 +558,14 @@ def register():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        fullname = request.form["fullname"]
+        fullname = request.form.get("fullname", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
 
-        email = request.form["email"]
-
-        password = request.form["password"]
-
-        confirm = request.form["confirm"]
+        if not fullname or not email or not password or not confirm:
+            flash("All registration fields are required.", "danger")
+            return redirect(url_for("register"))
 
         # ------------------------------
         # CHECK PASSWORDS
@@ -931,7 +936,7 @@ def ask_ai():
             }
         ), 400
 
-    api_key = app.config.get("OPENROUTER_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY") or app.config.get("OPENROUTER_API_KEY")
 
     if not api_key:
         return jsonify(
@@ -949,52 +954,71 @@ def ask_ai():
 
     system_prompt = (
         "You are InvestIQ, an AI-powered investment intelligence assistant. "
-        "Answer stock-market questions in concise Hinglish or English based on "
-        "the user's language. Use the supplied live market context when available. "
-        "Keep answers practical: trend, risk, support/resistance or what to watch. "
-        "Do not promise guaranteed returns. Add a short educational disclaimer "
-        "when giving buy/sell style opinions."
+        "Reply in English only. Never use Hindi, Hinglish, or Romanized Hindi, "
+        "even if the user writes in those languages. "
+        "Use the supplied live market context when available. "
+        "Keep the response concise (under 180 words), practical, and easy to scan. "
+        "Use short plain-text paragraphs; do not use Markdown, headings, or asterisks. "
+        "Cover trend, key risk, and what to watch where relevant. Do not promise "
+        "guaranteed returns. Add a one-sentence educational disclaimer only for "
+        "buy, sell, or investment recommendations."
     )
 
-    try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": request.host_url.rstrip("/"),
-                "X-Title": "InvestIQ",
-            },
-            json={
-                "model": "openai/gpt-4o",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Live context:\n{stock_context}\n\n"
-                            f"User question:\n{question}"
-                        ),
-                    },
-                ],
-                "temperature": 0.4,
-                "max_tokens": 450,
-            },
-            timeout=25,
-        )
+    models_to_try = [
+        "openai/gpt-4o-mini",
+        "openai/gpt-4o",
+    ]
 
-        response.raise_for_status()
-        ai_data = response.json()
-        answer = (
-            ai_data.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-            .strip()
-        )
+    answer = None
+    last_error = None
 
-        if not answer:
-            raise ValueError("Empty AI response")
+    for model in models_to_try:
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": request.host_url.rstrip("/"),
+                    "X-Title": "InvestIQ",
+                },
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Live context:\n{stock_context}\n\n"
+                                f"User question:\n{question}\n\n"
+                                "Respond in English only."
+                            ),
+                        },
+                    ],
+                    "temperature": 0.4,
+                    "max_tokens": 400,
+                },
+                timeout=20,
+            )
 
+            if response.status_code == 200:
+                ai_data = response.json()
+                answer = (
+                    ai_data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                    .strip()
+                )
+                if answer:
+                    break
+            else:
+                last_error = f"Model {model} returned HTTP {response.status_code}: {response.text}"
+                print("OpenRouter error:", last_error)
+        except Exception as error:
+            last_error = str(error)
+            print(f"Ask AI model {model} error:", error)
+
+    if answer:
         return jsonify(
             {
                 "success": True,
@@ -1003,24 +1027,21 @@ def ask_ai():
             }
         )
 
-    except Exception as error:
-        print("Ask AI Error:", error)
+    fallback_answer = (
+        "The AI service is temporarily unavailable. "
+        f"{stock_context} "
+        "Review the price trend, volume, and recent news before making a decision. "
+        "This is educational information, not financial advice."
+    )
 
-        fallback_answer = (
-            "AI response abhi unavailable hai. "
-            f"{stock_context} "
-            "Price trend, volume aur recent news check karke decision lena better rahega. "
-            "This is educational information, financial advice nahi."
-        )
-
-        return jsonify(
-            {
-                "success": False,
-                "answer": fallback_answer,
-                "symbol": detected_symbol,
-                "message": "AI service temporarily unavailable.",
-            }
-        ), 503
+    return jsonify(
+        {
+            "success": False,
+            "answer": fallback_answer,
+            "symbol": detected_symbol,
+            "message": "AI service temporarily unavailable.",
+        }
+    ), 503
 
 
 # ==================================================
@@ -1104,7 +1125,7 @@ def forgot_password():
             session["reset_email"] = email
             session["reset_otp"] = otp
             session["reset_otp_expires"] = (
-                datetime.utcnow() + timedelta(minutes=10)
+                datetime.now(timezone.utc) + timedelta(minutes=10)
             ).isoformat()
             session["reset_step"] = "verify"
 
@@ -1126,7 +1147,14 @@ def forgot_password():
             entered_otp = request.form.get("otp", "").strip()
             expires_raw = session.get("reset_otp_expires")
 
-            if not expires_raw or datetime.utcnow() > datetime.fromisoformat(expires_raw):
+            try:
+                expires_at = datetime.fromisoformat(expires_raw) if expires_raw else None
+                if expires_at and expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=timezone.utc)
+            except (TypeError, ValueError):
+                expires_at = None
+
+            if not expires_at or datetime.now(timezone.utc) > expires_at:
                 session["reset_step"] = "request"
                 flash("OTP expired. Please request a new OTP.", "danger")
 
@@ -1290,7 +1318,11 @@ def compare_results():
 
             ticker = yf.Ticker(ticker_symbol)
 
-            info = ticker.info or {}
+            try:
+                info = ticker.info or {}
+            except Exception as info_error:
+                print(f"Comparison metadata error for {clean_symbol}:", info_error)
+                info = {}
 
             # Get latest stock price
             latest_history = ticker.history(period="5d")
@@ -1320,7 +1352,7 @@ def compare_results():
                 "revenue": (info.get("totalRevenue") or "N/A"),
                 "roe": (info.get("returnOnEquity") or "N/A"),
                 "dividend_yield": (
-                    round(float(info.get("dividendYield")), 2)
+                    round(float(info.get("dividendYield")) * 100, 2)
                     if info.get("dividendYield") is not None
                     else "N/A"
                 ),
@@ -1441,8 +1473,12 @@ def add_to_watchlist():
 
     stock = Watchlist(user_id=current_user.id, symbol=symbol)
 
-    db.session.add(stock)
-    db.session.commit()
+    try:
+        db.session.add(stock)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"success": False, "message": "Already added"})
 
     return jsonify({"success": True})
 
@@ -1498,6 +1534,53 @@ def watchlist_summary():
                 "stocks": [],
             }
         )
+
+
+@app.route("/api/notifications")
+@login_required
+def notifications():
+    """Return a small, fresh set of market notifications for the navbar."""
+    try:
+        watchlist_symbols = [
+            item.symbol.upper()
+            for item in Watchlist.query.filter_by(user_id=current_user.id)
+            .order_by(Watchlist.created_at.desc())
+            .limit(3)
+            .all()
+        ]
+        symbols = ["^NSEI"] + (watchlist_symbols or ["^BSESN"])
+        items = []
+
+        for symbol in symbols:
+            try:
+                history = yf.Ticker(symbol).history(period="5d", auto_adjust=False)
+                history = history.dropna(subset=["Close"])
+                if history.empty:
+                    continue
+
+                current = float(history["Close"].iloc[-1])
+                previous = float(history["Close"].iloc[-2]) if len(history) > 1 else current
+                change = ((current - previous) / previous * 100) if previous else 0
+                label = (
+                    "NIFTY 50" if symbol == "^NSEI"
+                    else "SENSEX" if symbol == "^BSESN"
+                    else symbol.replace(".NS", "")
+                )
+                direction = "up" if change >= 0 else "down"
+                items.append({
+                    "id": symbol,
+                    "title": f"{label} is {direction} {abs(change):.2f}% today",
+                    "detail": f"Live price: ₹{current:,.2f}",
+                    "type": direction,
+                    "time": "Live now",
+                })
+            except Exception as error:
+                print(f"Notification price error for {symbol}: {error}")
+
+        return jsonify({"success": True, "notifications": items, "updated_at": datetime.now().strftime("%I:%M %p")})
+    except Exception as error:
+        print("Notification Error:", error)
+        return jsonify({"success": False, "notifications": [], "message": "Unable to load live notifications"}), 500
 
 
 @app.route("/api/stock-live/<symbol>")

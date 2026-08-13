@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("stockSearchInput");
     const resultBox = document.getElementById("stockResults");
     const watchlistSearch = document.getElementById("watchlistSearch");
+    const addStockHint = document.getElementById("addStockHint");
 
     /* -------------------------
        Search inside watchlist
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (query.length < 2) {
 
                 resultBox.innerHTML = "";
+                if (addStockHint) addStockHint.textContent = "Start typing to find a stock.";
 
                 return;
 
@@ -52,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             timer = setTimeout(async () => {
 
+                if (addStockHint) addStockHint.textContent = "Searching live NSE listings…";
                 const response = await fetch(`/api/search-stocks?q=${encodeURIComponent(query)}`);
 
                 const stocks = await response.json();
@@ -66,6 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
 
                 }
+
+                if (addStockHint) addStockHint.textContent = `${stocks.length} matching stock${stocks.length === 1 ? "" : "s"} found`;
 
                 stocks.forEach(stock => {
 
@@ -210,6 +215,8 @@ document.addEventListener("DOMContentLoaded", () => {
             createPortfolioChart(data.allocation || []);
 
             updateCards(data.stocks || []);
+
+            document.dispatchEvent(new CustomEvent("watchlist:data-ready"));
 
         }
 
@@ -430,3 +437,58 @@ async function loadMarketWidget() {
 }
 
 loadMarketWidget();
+
+document.addEventListener("DOMContentLoaded", function () {
+    const grid = document.getElementById("watchlistGrid");
+    const search = document.getElementById("watchlistSearch");
+    const sort = document.getElementById("watchlistSort");
+    const filter = document.getElementById("watchlistFilter");
+
+    function cardValue(card, selector) {
+        const node = card.querySelector(selector);
+        return node ? node.textContent.trim() : "";
+    }
+
+    function numericValue(value) {
+        const match = String(value).replace(/,/g, "").match(/-?[\d.]+/);
+        return match ? Number(match[0]) : 0;
+    }
+
+    function refreshWatchlist() {
+        if (!grid) return;
+        const query = (search ? search.value : "").trim().toLowerCase();
+        const filterMode = filter ? filter.selectedIndex : 0;
+        const sortMode = sort ? sort.selectedIndex : 0;
+        const cards = Array.from(grid.querySelectorAll(".watchlist-card"));
+
+        cards.forEach(function (card) {
+            const symbol = (card.dataset.symbol || "").toLowerCase();
+            const company = cardValue(card, ".company-name").toLowerCase();
+            const change = numericValue(cardValue(card, ".stock-change"));
+            const matchesSearch = !query || symbol.includes(query) || company.includes(query);
+            const matchesFilter = filterMode === 0 || (filterMode === 1 && change > 0) || (filterMode === 2 && change < 0);
+            card.hidden = !(matchesSearch && matchesFilter);
+        });
+
+        cards.sort(function (a, b) {
+            const symbolA = a.dataset.symbol || "";
+            const symbolB = b.dataset.symbol || "";
+            const priceA = numericValue(cardValue(a, ".stock-price"));
+            const priceB = numericValue(cardValue(b, ".stock-price"));
+            const changeA = numericValue(cardValue(a, ".stock-change"));
+            const changeB = numericValue(cardValue(b, ".stock-change"));
+            if (sortMode === 1) return symbolA.localeCompare(symbolB);
+            if (sortMode === 2) return symbolB.localeCompare(symbolA);
+            if (sortMode === 3) return priceB - priceA;
+            if (sortMode === 4) return priceA - priceB;
+            if (sortMode === 5) return changeB - changeA;
+            if (sortMode === 6) return changeA - changeB;
+            return 0;
+        }).forEach(function (card) { grid.appendChild(card); });
+    }
+
+    if (search) search.addEventListener("input", refreshWatchlist);
+    if (sort) sort.addEventListener("change", refreshWatchlist);
+    if (filter) filter.addEventListener("change", refreshWatchlist);
+    document.addEventListener("watchlist:data-ready", refreshWatchlist);
+});

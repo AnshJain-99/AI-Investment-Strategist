@@ -1048,8 +1048,10 @@ border-radius:50%;
     gap: 9px;
     padding: 10px 11px;
     border-radius: 14px;
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
 }
 
 .chat-message.bot {
@@ -1057,6 +1059,7 @@ border-radius:50%;
     color: #3f3f46;
     background: #ffffff;
     border: 1px solid #ede9fe;
+    box-shadow: 0 2px 8px rgba(76, 29, 149, .04);
 }
 
 .chat-message.user {
@@ -1078,6 +1081,100 @@ border-radius:50%;
 
 .ask-ai-answer.loading .chat-message.bot i {
     animation: askAiSpin .8s linear infinite;
+}
+
+/* Floating InvestIQ chat assistant */
+.floating-chat-toggle {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 1040;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 18px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 16px 34px rgba(109, 40, 217, .34);
+    font-size: 14px;
+    font-weight: 800;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.floating-chat-toggle:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(109, 40, 217, .42);
+}
+
+.floating-chatbot {
+    position: fixed;
+    right: 28px;
+    bottom: 92px;
+    z-index: 1040;
+    width: min(390px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(18px) scale(.97);
+    transform-origin: bottom right;
+    transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+}
+
+.floating-chatbot.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.floating-chatbot .ask-ai-answer {
+    min-height: 250px;
+    max-height: 360px;
+    margin-top: 0;
+}
+
+.floating-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.floating-chat-actions > button {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    color: #6b7280;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.floating-chat-actions > button:hover {
+    color: #6d28d9;
+    border-color: #c4b5fd;
+}
+
+.chat-message.loading i {
+    animation: askAiSpin .8s linear infinite;
+}
+
+@media (max-width: 576px) {
+    .floating-chat-toggle {
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .floating-chatbot {
+        right: 16px;
+        bottom: 80px;
+    }
 }
 
 .portfolio-workspace {

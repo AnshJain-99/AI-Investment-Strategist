@@ -101,11 +101,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const askAiForm = document.getElementById("askAiForm");
     const askAiQuestion = document.getElementById("askAiQuestion");
     const askAiAnswer = document.getElementById("askAiAnswer");
-    const askAiSuggestionButtons = document.querySelectorAll(
-        ".ask-ai-suggestions button"
-    );
-
-    function setAskAiAnswer(message, state = "idle", question = "") {
+    const askAiToggle = document.getElementById("askAiToggle");
+    const askAiWidget = document.getElementById("askAiWidget");
+    const askAiClose = document.getElementById("askAiClose");
+    function addChatMessage(message, type = "bot", state = "idle") {
         if (!askAiAnswer) {
             return;
         }
@@ -117,45 +116,68 @@ document.addEventListener("DOMContentLoaded", () => {
                     ? "bi-exclamation-triangle"
                     : "bi-lightning-charge";
 
-        askAiAnswer.className = `ask-ai-answer ${state}`;
-        askAiAnswer.replaceChildren();
+        const chatMessage = document.createElement("div");
+        chatMessage.className = `chat-message ${type} ${state}`;
 
-        if (question) {
-            const userMessage = document.createElement("div");
-            userMessage.className = "chat-message user";
-
-            const userText = document.createElement("span");
-            userText.textContent = question;
-
-            userMessage.append(userText);
-            askAiAnswer.append(userMessage);
+        if (type === "bot") {
+            const iconElement = document.createElement("i");
+            iconElement.className = `bi ${icon}`;
+            chatMessage.append(iconElement);
         }
 
-        const botMessage = document.createElement("div");
-        botMessage.className = "chat-message bot";
-
-        const iconElement = document.createElement("i");
-        iconElement.className = `bi ${icon}`;
-
         const messageElement = document.createElement("span");
-        messageElement.textContent = message;
+        messageElement.textContent = type === "bot"
+            ? cleanAiResponse(message)
+            : message;
+        chatMessage.append(messageElement);
+        askAiAnswer.append(chatMessage);
+        askAiAnswer.scrollTop = askAiAnswer.scrollHeight;
+        return chatMessage;
+    }
 
-        botMessage.append(iconElement, messageElement);
-        askAiAnswer.append(botMessage);
+    function cleanAiResponse(message) {
+        return String(message || "")
+            .replace(/\*{1,3}/g, "")
+            .replace(/#{1,6}\s*/g, "")
+            .replace(/[\t ]{2,}/g, " ")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+    }
+
+    function setChatOpen(isOpen) {
+        if (!askAiWidget || !askAiToggle) return;
+        askAiWidget.classList.toggle("is-open", isOpen);
+        askAiWidget.setAttribute("aria-hidden", String(!isOpen));
+        askAiToggle.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen && askAiQuestion) askAiQuestion.focus();
+    }
+
+    function resetChat() {
+        if (!askAiAnswer) return;
+        askAiAnswer.replaceChildren();
+        addChatMessage(
+            "Hello! Ask me about a stock, NIFTY 50, SENSEX, market trends, or investment risks.",
+            "bot"
+        );
     }
 
     async function askInvestIQ(question) {
-        if (!question) {
+        if (!question || !askAiForm) {
             return;
         }
 
         const submitButton = askAiForm.querySelector("button[type='submit']");
 
+        if (!submitButton) {
+            return;
+        }
+
         submitButton.disabled = true;
-        setAskAiAnswer(
-            "InvestIQ live stock context ke saath answer bana raha hai...",
-            "loading",
-            question
+        addChatMessage(question, "user");
+        const loadingMessage = addChatMessage(
+            "InvestIQ is checking the latest market context...",
+            "bot",
+            "loading"
         );
 
         try {
@@ -173,13 +195,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(data.message || "AI answer unavailable");
             }
 
-            setAskAiAnswer(data.answer, data.success ? "ready" : "error", question);
+            loadingMessage.remove();
+            addChatMessage(data.answer, "bot", data.success ? "ready" : "error");
         } catch (error) {
-            setAskAiAnswer(
-                "AI abhi connect nahi ho pa raha. Thodi der baad retry karo.",
-                "error",
-                question
-            );
+            loadingMessage.remove();
+            addChatMessage("The AI assistant is unavailable right now. Please try again shortly.", "bot", "error");
         } finally {
             submitButton.disabled = false;
         }
@@ -188,15 +208,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (askAiForm && askAiQuestion && askAiAnswer) {
         askAiForm.addEventListener("submit", (event) => {
             event.preventDefault();
-            askInvestIQ(askAiQuestion.value.trim());
+            const question = askAiQuestion.value.trim();
+            if (!question) return;
+            askAiQuestion.value = "";
+            askInvestIQ(question);
         });
+    }
 
-        askAiSuggestionButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                askAiQuestion.value = button.dataset.question || "";
-                askInvestIQ(askAiQuestion.value.trim());
-            });
+    if (askAiToggle) {
+        askAiToggle.addEventListener("click", () => {
+            const shouldOpen = !askAiWidget.classList.contains("is-open");
+            if (shouldOpen) resetChat();
+            setChatOpen(shouldOpen);
         });
+    }
+
+    if (askAiClose) {
+        askAiClose.addEventListener("click", () => setChatOpen(false));
     }
 
     const chart = document.getElementById("allocationChart");
@@ -204,6 +232,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (chart) {
 
         const legend = document.getElementById("portfolioLegend");
+        const bestStock = document.getElementById("bestStock");
+        const bestGain = document.getElementById("bestGain");
+        const worstStock = document.getElementById("worstStock");
+        const worstLoss = document.getElementById("worstLoss");
+
+        if (!legend) {
+            return;
+        }
 
         const sectors = [
 
@@ -252,11 +288,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
         });
-        document.getElementById("bestStock").innerText = "TCS";
-        document.getElementById("bestGain").innerText = "+4.82%";
-
-        document.getElementById("worstStock").innerText = "RELIANCE";
-        document.getElementById("worstLoss").innerText = "-1.43%";
+        if (bestStock) bestStock.innerText = "TCS";
+        if (bestGain) bestGain.innerText = "+4.82%";
+        if (worstStock) worstStock.innerText = "RELIANCE";
+        if (worstLoss) worstLoss.innerText = "-1.43%";
 
         legend.innerHTML = "";
 

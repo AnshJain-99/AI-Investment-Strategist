@@ -6,6 +6,44 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 
 <div class="investiq-landing">
+    <div class="landing-background" aria-hidden="true">
+        <div class="landing-starfield"></div>
+        <div class="landing-grid"></div>
+        <span class="landing-aurora aurora-indigo"></span>
+        <span class="landing-aurora aurora-blue"></span>
+        <span class="landing-aurora aurora-lilac"></span>
+        <svg class="landing-trend-line" viewBox="0 0 1440 760" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="landingTrend" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0" />
+                    <stop offset="35%" stop-color="#8b5cf6" stop-opacity=".28" />
+                    <stop offset="100%" stop-color="#6d28d9" stop-opacity=".08" />
+                </linearGradient>
+            </defs>
+            <path d="M-30 566 C108 518 152 600 262 524 S403 430 500 482 S650 564 752 416 S916 310 1002 364 S1160 492 1280 278 S1388 204 1480 238" />
+            <path class="trend-accent" d="M-30 566 C108 518 152 600 262 524 S403 430 500 482 S650 564 752 416 S916 310 1002 364 S1160 492 1280 278 S1388 204 1480 238" />
+        </svg>
+        <div class="market-ghost market-ghost-left" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="market-ghost market-ghost-right market-line-ghost" aria-hidden="true">
+            <svg viewBox="0 0 360 180" preserveAspectRatio="none">
+                <path class="ghost-fill" d="M0 137 L47 119 L84 133 L126 79 L167 96 L207 53 L250 73 L295 28 L360 47 V180 H0Z" />
+                <path d="M0 137 L47 119 L84 133 L126 79 L167 96 L207 53 L250 73 L295 28 L360 47" />
+            </svg>
+        </div>
+        <div class="market-ghost market-ghost-mid" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="market-ghost market-ghost-bottom market-line-ghost" aria-hidden="true">
+            <svg viewBox="0 0 360 180" preserveAspectRatio="none">
+                <path class="ghost-fill" d="M0 124 L42 137 L86 91 L126 109 L168 68 L207 90 L248 43 L296 64 L360 23 V180 H0Z" />
+                <path d="M0 124 L42 137 L86 91 L126 109 L168 68 L207 90 L248 43 L296 64 L360 23" />
+            </svg>
+        </div>
+        <span class="market-orb orb-one"></span>
+        <span class="market-orb orb-two"></span>
+    </div>
     <nav class="landing-nav">
         <a href="{{ url_for('landing') }}" class="landing-brand">
             <span class="brand-dots" aria-hidden="true">

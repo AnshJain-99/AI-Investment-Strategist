@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 
-<div class="auth-split-page">
+<div class="auth-split-page auth-login-page">
     <div class="auth-split-card">
         <section class="auth-split-form">
             <a href="/" class="auth-mini-brand">
@@ -30,19 +30,35 @@
             {% endwith %}
 
             <form action="{{ url_for('login') }}" method="POST" class="split-auth-form">
-                <input type="email" name="email" class="form-control" placeholder="Email Address" required>
-                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                <label class="auth-field">
+                    <i class="bi bi-envelope"></i>
+                    <input type="email" name="email" class="form-control" placeholder="Email Address" required>
+                </label>
+                <label class="auth-field">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required>
+                </label>
 
                 <div class="split-form-options">
                     <label>
                         <input type="checkbox">
                         Remember me
                     </label>
-                    <a href="/forgot-password">Forgot Password?</a>
+                    <a href="{{ url_for('forgot_password', restart='1') }}">Forgot Password?</a>
                 </div>
 
                 <button class="btn btn-login">Sign In</button>
             </form>
+
+            {% if google_client_id %}
+            <div class="google-login-divider"><span>or continue with</span></div>
+            <div class="google-signin-area">
+                <div id="googleSignInButton" aria-label="Sign in with Google"></div>
+                <p class="google-signin-error" id="googleSignInError" role="alert" hidden></p>
+            </div>
+            {% else %}
+            <p class="google-signin-unavailable">Google sign-in is currently unavailable.</p>
+            {% endif %}
 
             <p class="split-auth-bottom">
                 Don't have an account?
@@ -84,5 +100,69 @@
         </section>
     </div>
 </div>
+
+{% if google_client_id %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+    (function () {
+        const clientId = {{ google_client_id | tojson }};
+        const csrfToken = {{ google_csrf_token | tojson }};
+        const buttonTarget = document.getElementById("googleSignInButton");
+        const errorTarget = document.getElementById("googleSignInError");
+
+        function showError(message) {
+            errorTarget.textContent = message;
+            errorTarget.hidden = false;
+        }
+
+        window.handleGoogleCredential = async function (response) {
+            errorTarget.hidden = true;
+            if (!response || !response.credential) {
+                showError("Google did not return a sign-in credential. Please try again.");
+                return;
+            }
+
+            try {
+                const result = await fetch("{{ url_for('google_login') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({ credential: response.credential, csrf_token: csrfToken })
+                });
+                const data = await result.json();
+                if (!result.ok || !data.success) {
+                    throw new Error(data.message || "Unable to sign in with Google.");
+                }
+                window.location.assign(data.redirect || "{{ url_for('dashboard') }}");
+            } catch (error) {
+                showError(error.message || "Unable to sign in with Google. Please try again.");
+            }
+        };
+
+        function renderGoogleButton() {
+            if (!window.google || !window.google.accounts || !buttonTarget) return;
+            window.google.accounts.id.initialize({
+                client_id: clientId,
+                callback: window.handleGoogleCredential,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+            window.google.accounts.id.renderButton(buttonTarget, {
+                theme: "outline",
+                size: "large",
+                text: "signin_with",
+                shape: "rectangular",
+                width: 400,
+                logo_alignment: "left"
+            });
+        }
+
+        window.addEventListener("load", renderGoogleButton);
+    }());
+</script>
+{% endif %}
 
 {% endblock %}

@@ -30,10 +30,22 @@
             {% endwith %}
 
             <form action="{{ url_for('register') }}" method="POST" class="split-auth-form">
-                <input type="text" name="fullname" class="form-control" placeholder="Full Name" required>
-                <input type="email" name="email" class="form-control" placeholder="Email" required>
-                <input type="password" name="password" class="form-control" placeholder="Password" required>
-                <input type="password" name="confirm" class="form-control" placeholder="Confirm Password" required>
+                <label class="auth-field">
+                    <i class="bi bi-person"></i>
+                    <input type="text" name="fullname" class="form-control" placeholder="Full Name" required>
+                </label>
+                <label class="auth-field">
+                    <i class="bi bi-envelope"></i>
+                    <input type="email" name="email" class="form-control" placeholder="Email" required>
+                </label>
+                <label class="auth-field">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="password" class="form-control" placeholder="Password" required>
+                </label>
+                <label class="auth-field">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="confirm" class="form-control" placeholder="Confirm Password" required>
+                </label>
 
                 <button class="btn btn-login">Create Account</button>
             </form>

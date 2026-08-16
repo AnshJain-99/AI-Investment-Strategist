@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timedelta, timezone
 import feedparser
 import random
+import secrets
 import smtplib
 import ssl
 from email.message import EmailMessage
@@ -28,6 +29,13 @@ from config import Config
 from services.stock_service import StockService
 
 import requests
+
+try:
+    from google.auth.transport import requests as google_auth_requests
+    from google.oauth2 import id_token as google_id_token
+except ImportError:
+    google_auth_requests = None
+    google_id_token = None
 
 YFINANCE_CACHE_DIR = os.path.join(
     os.path.dirname(__file__),
@@ -470,6 +478,15 @@ with app.app_context():
     ensure_column("users", "risk_profile", "VARCHAR(30) DEFAULT 'Moderate' NOT NULL")
     ensure_column("users", "investment_goal", "VARCHAR(120)")
     ensure_column("users", "preferred_market", "VARCHAR(30) DEFAULT 'NSE' NOT NULL")
+    ensure_column("users", "google_id", "VARCHAR(255)")
+    ensure_column("users", "auth_provider", "VARCHAR(30) DEFAULT 'email' NOT NULL")
+    db.session.execute(
+        db.text("UPDATE users SET auth_provider = 'email' WHERE auth_provider IS NULL OR auth_provider = ''")
+    )
+    db.session.execute(
+        db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_id ON users(google_id) WHERE google_id IS NOT NULL")
+    )
+    db.session.commit()
 
 
 def send_otp_email(recipient, otp):
@@ -530,7 +547,7 @@ def login():
 
         if not email or not password:
             flash("Email and password are required.", "danger")
-            return render_template("login_form.html")
+            return render_login_form()
 
         user = db.session.execute(
             db.select(User).filter_by(email=email)
@@ -543,7 +560,100 @@ def login():
 
         flash("Invalid Email or Password", "danger")
 
-    return render_template("login_form.html")
+    return render_login_form()
+
+
+def render_login_form():
+    """Render the normal login form plus the public GIS client configuration."""
+    google_csrf_token = session.get("google_login_csrf")
+    if not google_csrf_token:
+        google_csrf_token = secrets.token_urlsafe(32)
+        session["google_login_csrf"] = google_csrf_token
+
+    return render_template(
+        "login_form.html",
+        google_client_id=app.config.get("GOOGLE_CLIENT_ID"),
+        google_csrf_token=google_csrf_token,
+    )
+
+
+@app.route("/auth/google", methods=["POST"])
+def google_login():
+    """Verify a Google ID token and link or create the matching InvestIQ account."""
+    if current_user.is_authenticated:
+        return jsonify({"success": True, "redirect": url_for("dashboard")})
+
+    client_id = app.config.get("GOOGLE_CLIENT_ID")
+    if not client_id or not google_id_token or not google_auth_requests:
+        return jsonify({"success": False, "message": "Google sign-in is not configured yet."}), 503
+
+    payload = request.get_json(silent=True) or {}
+    csrf_token = str(payload.get("csrf_token", ""))
+    expected_csrf_token = str(session.get("google_login_csrf", ""))
+    if not expected_csrf_token or not secrets.compare_digest(csrf_token, expected_csrf_token):
+        return jsonify({"success": False, "message": "Your sign-in session expired. Refresh the page and try again."}), 403
+
+    credential = payload.get("credential", "")
+    if not credential:
+        return jsonify({"success": False, "message": "Google did not return a sign-in credential. Please try again."}), 400
+
+    try:
+        token_data = google_id_token.verify_oauth2_token(
+            credential,
+            google_auth_requests.Request(),
+            client_id,
+        )
+    except ValueError:
+        return jsonify({"success": False, "message": "Google sign-in could not be verified. Please try again."}), 401
+    except Exception:
+        app.logger.exception("Google token verification failed")
+        return jsonify({"success": False, "message": "Unable to verify Google sign-in right now. Please try again."}), 503
+
+    email = str(token_data.get("email", "")).strip().lower()
+    google_id = str(token_data.get("sub", "")).strip()
+    full_name = str(token_data.get("name") or email.split("@")[0]).strip()
+
+    if token_data.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}:
+        return jsonify({"success": False, "message": "Google sign-in could not be verified. Please try again."}), 401
+
+    if not email or not google_id or token_data.get("email_verified") is not True:
+        return jsonify({"success": False, "message": "Use a verified Google email address to sign in."}), 401
+
+    try:
+        google_user = db.session.execute(db.select(User).filter_by(google_id=google_id)).scalar_one_or_none()
+        email_user = db.session.execute(db.select(User).filter_by(email=email)).scalar_one_or_none()
+        if google_user and email_user and google_user.id != email_user.id:
+            return jsonify({"success": False, "message": "This Google account is already linked to another user."}), 409
+
+        user = google_user or email_user
+        if user:
+            if user.google_id and user.google_id != google_id:
+                return jsonify({"success": False, "message": "This email is already linked to another Google account."}), 409
+            user.google_id = google_id
+            if user.auth_provider == "email":
+                user.auth_provider = "email_google"
+        else:
+            generated_password = bcrypt.generate_password_hash(secrets.token_urlsafe(32)).decode("utf-8")
+            user = User(
+                full_name=full_name[:100],
+                email=email,
+                password=generated_password,
+                google_id=google_id,
+                auth_provider="google",
+            )
+            db.session.add(user)
+
+        db.session.commit()
+        login_user(user)
+        session.pop("google_login_csrf", None)
+        return jsonify({"success": True, "redirect": url_for("dashboard")})
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"success": False, "message": "This Google account is already linked to another user."}), 409
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Google account sign-in failed")
+        return jsonify({"success": False, "message": "Unable to sign in with Google right now. Please try again."}), 500
 
 
 # ==================================================
@@ -1104,6 +1214,29 @@ def forgot_password():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard"))
 
+    if request.args.get("restart"):
+        session.pop("reset_email", None)
+        session.pop("reset_otp", None)
+        session.pop("reset_otp_expires", None)
+        session.pop("reset_step", None)
+        return redirect(url_for("forgot_password"))
+
+    # If currently in verify or reset step, verify the OTP hasn't expired
+    if session.get("reset_step") in ["verify", "reset"]:
+        expires_raw = session.get("reset_otp_expires")
+        try:
+            expires_at = datetime.fromisoformat(expires_raw) if expires_raw else None
+            if expires_at and expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            expires_at = None
+
+        if not expires_at or datetime.now(timezone.utc) > expires_at:
+            session.pop("reset_email", None)
+            session.pop("reset_otp", None)
+            session.pop("reset_otp_expires", None)
+            session.pop("reset_step", None)
+
     step = session.get("reset_step", "request")
 
     if request.method == "POST":
@@ -1112,13 +1245,16 @@ def forgot_password():
         if action == "send_otp":
             email = request.form.get("email", "").strip().lower()
 
+            if not email:
+                flash("Please enter your registered email address.", "danger")
+                return redirect(url_for("forgot_password"))
+
             user = db.session.execute(
                 db.select(User).filter_by(email=email)
             ).scalar_one_or_none()
 
             if not user:
-                flash("Email not found!", "danger")
-
+                flash("❌ This email is not registered with us. Please check or sign up.", "danger")
                 return redirect(url_for("forgot_password"))
 
             otp = f"{random.randint(100000, 999999)}"
@@ -1133,13 +1269,13 @@ def forgot_password():
                 email_sent = send_otp_email(email, otp)
 
                 if email_sent:
-                    flash("OTP sent to your registered email.", "success")
+                    flash(f"OTP sent to {email}.", "success")
                 else:
-                    flash(f"Dev OTP: {otp}", "info")
+                    flash(f"🔑 Dev Mode OTP: {otp}", "info")
 
             except Exception as error:
                 print("OTP email error:", error)
-                flash(f"Email failed. Dev OTP: {otp}", "warning")
+                flash(f"🔑 Dev Mode OTP: {otp}", "info")
 
             return redirect(url_for("forgot_password"))
 

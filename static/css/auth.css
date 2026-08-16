@@ -773,7 +773,7 @@ a:hover {
     }
 
     .split-auth-bottom {
-        margin-top: 34px;
+        margin-top: 28px;
     }
 }
 
@@ -1501,6 +1501,57 @@ a:hover {
     background-size: 52px 52px;
     -webkit-mask-image: linear-gradient(transparent, #000 5%, #000 95%, transparent);
     mask-image: linear-gradient(transparent, #000 5%, #000 95%, transparent);
+}
+
+.google-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 14px;
+    color: #9893a4;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.google-login-divider::before,
+.google-login-divider::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: rgba(23, 20, 43, .12);
+}
+
+.google-signin-area {
+    min-height: 44px;
+    display: grid;
+    /* Keep the Google action on the same left edge as the primary sign-in action. */
+    place-items: start;
+}
+
+.google-signin-area > div {
+    width: min(320px, 100%);
+}
+
+@media (max-width: 700px) {
+    .google-signin-area {
+        place-items: center;
+    }
+}
+.google-signin-area iframe {
+    max-width: 100%;
+}
+
+.google-signin-error,
+.google-signin-unavailable {
+    margin: 10px 0 0;
+    color: #c2410c;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.google-signin-unavailable {
+    color: #8a8792;
 }
 
 /* Quiet market graphics run behind every landing section, not inside the cards. */
@@ -2411,4 +2462,272 @@ a:hover {
         min-height: auto;
         padding: 18px 0;
     }
+}
+
+.bar-set,
+.allocation-bars { height: 178px; }
+
+.otp-steps {
+    max-width: 540px;
+    gap: 9px;
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #edf0f5;
+}
+
+.otp-steps span {
+    min-height: 54px;
+    justify-content: center;
+    gap: 9px;
+    color: #526078;
+    background: #f3f5f9;
+    border-radius: 18px;
+}
+
+.otp-steps span.active {
+    background: linear-gradient(100deg, #5e14ed, #7831ec);
+}
+
+.resend-form { width: min(540px, 100%); text-align: left; }
+
+@media (max-width: 1000px) {
+    .auth-split-page { padding: 0; }
+    .auth-split-card { min-height: 100vh; border-radius: 0; }
+    .auth-visual-panel { display: none; }
+    .auth-split-form { min-height: 100vh; padding: 64px clamp(24px, 10vw, 96px); }
+}
+
+@media (max-width: 560px) {
+    .auth-split-form { padding: 38px 24px; }
+    .auth-mini-brand { margin-bottom: 30px; }
+    .auth-copy h1 { font-size: 42px; }
+    .auth-copy p { font-size: 15px; }
+    .split-auth-form .form-control { height: 60px; font-size: 16px; }
+    .split-auth-form .btn-login { height: 58px; }
+    .otp-steps span { min-height: 48px; font-size: 13px; }
+}
+
+/* =====================================================
+   COMPREHENSIVE AUTH FIX (Login / Register / Forgot Password)
+===================================================== */
+
+/* 1. Form layout & input fields */
+.split-auth-form {
+    width: 100%;
+    max-width: 420px;
+    display: grid;
+    gap: 14px;
+}
+
+.auth-field {
+    position: relative;
+    display: block;
+    margin: 0;
+    width: 100%;
+}
+
+.auth-field > i {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 16px;
+    color: #6b7280;
+    font-size: 18px;
+    line-height: 1;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.split-auth-form .auth-field .form-control {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px 0 46px;
+    color: #1f2937;
+    background: #ffffff;
+    border: 1px solid #dfe3ea;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.split-auth-form .auth-field .form-control:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+/* 2. Brand logo & headings */
+.auth-mini-brand {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    color: #17142b;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-copy {
+    margin-bottom: 24px;
+}
+
+/* 3. Action Buttons */
+.split-auth-form .btn-login {
+    width: 100%;
+    height: 54px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(100deg, #5e14ed 0%, #782cf0 55%, #6519e0 100%);
+    box-shadow: 0 12px 28px rgba(99, 35, 226, .28);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.split-auth-form .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(99, 35, 226, .35);
+}
+
+/* 4. Google Login Divider (Horizontal lines on both sides, text in center) */
+.google-login-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 420px;
+    margin: 24px 0 16px;
+    color: #8a92a6;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.google-login-divider::before,
+.google-login-divider::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: #e2e8f0;
+}
+
+/* 5. Google Sign-In Button Area — Centered beneath divider */
+.google-signin-area {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin: 0;
+}
+
+.google-signin-area > div,
+#googleSignInButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.google-signin-area iframe {
+    margin: 0 auto !important;
+}
+
+.google-signin-error,
+.google-signin-unavailable {
+    margin: 10px 0 0;
+    color: #c2410c;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+/* 6. Bottom Links (Sign Up, Login, Forgot Password) — Centered */
+.split-auth-bottom {
+    position: static;
+    width: 100%;
+    max-width: 420px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    color: #6b7280;
+    font-size: 14px;
+    text-align: center;
+}
+
+.split-auth-bottom a {
+    color: #7c3aed;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.split-auth-bottom a:hover {
+    text-decoration: underline;
+}
+
+/* 7. OTP Steps & Actions for Forgot Password */
+.otp-steps {
+    width: 100%;
+    max-width: 420px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.otp-steps span {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.otp-steps span.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    border-color: transparent;
+}
+
+.forgot-actions {
+    width: 100%;
+    max-width: 420px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.auth-action-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #7c3aed;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.auth-action-link:hover {
+    text-decoration: underline;
+    color: #5b21b6;
+}
+
+.auth-split-form .alert {
+    width: 100%;
+    max-width: 420px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
 }

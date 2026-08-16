@@ -15,6 +15,8 @@ class User(UserMixin, db.Model):
     risk_profile = db.Column(db.String(30), nullable=False, default="Moderate")
     investment_goal = db.Column(db.String(120), nullable=True)
     preferred_market = db.Column(db.String(30), nullable=False, default="NSE")
+    google_id = db.Column(db.String(255), unique=True, nullable=True)
+    auth_provider = db.Column(db.String(30), nullable=False, default="email")
 
     watchlist = db.relationship(
         "Watchlist",

@@ -8,3 +8,4 @@ feedparser
 plotly
 requests
 google-auth
+gunicorn

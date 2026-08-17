@@ -1302,3 +1302,30 @@ margin-top:18px;
 
 }
 
+
+/* =====================================================
+   WATCHLIST RESPONSIVE POLISH (< 768px)
+===================================================== */
+
+@media (max-width: 768px) {
+    .portfolio-summary {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .watchlist-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .watchlist-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .watchlist-table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}

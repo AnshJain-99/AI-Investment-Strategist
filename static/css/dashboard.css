@@ -1579,3 +1579,40 @@ border-radius:50%;
         margin: 0 auto;
     }
 }
+
+/* =====================================================
+   DASHBOARD MOBILE POLISH (< 768px & < 480px)
+===================================================== */
+
+@media (max-width: 768px) {
+    .dashboard-workspace,
+    .dashboard-grid,
+    .metrics-row,
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .market-overview-card,
+    .holdings-panel,
+    .intelligence-panel,
+    .ai-summary-card {
+        padding: 18px 14px;
+        border-radius: 18px;
+    }
+
+    .chart-container,
+    .portfolio-chart-wrapper {
+        min-height: 280px;
+        width: 100%;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 480px) {
+    .market-overview-card,
+    .holdings-panel,
+    .intelligence-panel {
+        padding: 14px 12px;
+    }
+}

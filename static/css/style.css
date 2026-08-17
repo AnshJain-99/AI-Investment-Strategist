@@ -1024,3 +1024,92 @@ line-height:1.5;
 font-size:15px;
 
 }
+/* =====================================================
+   GLOBAL RESPONSIVE SYSTEM (Mobile, Tablet, All Laptops)
+===================================================== */
+
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+
+.app-layout {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Fluid responsive charts (Plotly & Canvas) */
+.js-plotly-plot,
+.plot-container,
+.plotly,
+canvas {
+    max-width: 100% !important;
+}
+
+/* Touch-friendly responsive tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive Images & Media */
+img, svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Laptop and Desktop Screens */
+@media (min-width: 1400px) {
+    .page-content {
+        max-width: 1520px;
+        padding: 32px 40px 60px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .page-content {
+        padding: 24px 28px 48px;
+    }
+}
+
+/* Tablet Screens (768px - 1024px) */
+@media (max-width: 1024px) {
+    .page-content {
+        padding: 20px 22px 40px;
+    }
+}
+
+/* Mobile Screens (< 768px) */
+@media (max-width: 768px) {
+    .page-content {
+        padding: 14px 12px 32px;
+    }
+
+    .card,
+    .ai-card,
+    .dashboard-card,
+    .portfolio-card {
+        border-radius: 16px;
+        padding: 16px;
+    }
+
+    .page-title h3,
+    .dashboard-header h1 {
+        font-size: 22px;
+    }
+}
+
+/* Small Mobile Screens (< 480px) */
+@media (max-width: 480px) {
+    .page-content {
+        padding: 12px 10px 28px;
+    }
+
+    .btn {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+}

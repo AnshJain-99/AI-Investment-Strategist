@@ -2630,3 +2630,38 @@ line-height:1.5;
 font-size:15px;
 
 }
+
+/* =====================================================
+   COMPARE STOCKS MOBILE POLISH (< 768px)
+===================================================== */
+
+@media (max-width: 768px) {
+    .compare-container,
+    .compare-grid,
+    .compare-selection-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .compare-card,
+    .comparison-result-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .compare-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .analysis-grid-two {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .target-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}

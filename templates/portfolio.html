@@ -158,7 +158,7 @@
                             <span>₹{{ "{:,.2f}".format(sec.value) }} ({{ sec.percentage }}%)</span>
                         </div>
                         <div class="progress-track">
-                            <div class="progress-fill sector-fill-{{ loop.index0 % 6 }}" style="width: {{ sec.percentage }}%;"></div>
+                            <div class="progress-fill sector-fill-{{ loop.index0 % 6 }}" style="--bar-pct: {{ sec.percentage }}%;"></div>
                         </div>
                     </div>
                     {% endfor %}

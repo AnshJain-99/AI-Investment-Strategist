@@ -4,16 +4,25 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css') }}">
 {% endblock %}
 
-{% block title %}Stock Analysis{% endblock %}
+{% block title %}{% if stock %}{{ stock.display_symbol or stock.symbol }} — Stock Analysis{% else %}Stock Analysis — InvestIQ{% endif %}{% endblock %}
 
 {% block content %}
 <div class="analysis-page analysis-dashboard">
     {% if stock %}
+    <!-- HERO HEADER -->
     <section class="analysis-hero dashboard-section">
         <div class="hero-left">
-            <span class="hero-label">InvestIQ Analysis</span>
+            <span class="hero-label">InvestIQ Multi-Factor Intelligence</span>
             <h1>{{ stock.name }}</h1>
             <div class="hero-symbol"><i class="bi bi-building"></i>{{ stock.symbol }}</div>
+            <div class="mt-3 d-flex gap-2">
+                <a href="{{ url_for('portfolio') }}?action=buy&symbol={{ stock.symbol }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-wallet2"></i> Add to Portfolio
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addToWatchlistBtn" data-symbol="{{ stock.symbol }}">
+                    <i class="bi bi-bookmark-plus"></i> Watchlist
+                </button>
+            </div>
         </div>
         <div class="hero-right">
             <div class="hero-price">₹{{ stock.price }}</div>
@@ -29,39 +38,188 @@
         </div>
     </section>
 
+    <!-- 7-FACTOR SIGNAL & COMPOSITE SCORE -->
     <section class="signal-score-row dashboard-section">
         <article class="signal-card">
-            <div class="section-heading"><span>AI Signal</span><i class="bi bi-cpu"></i></div>
-            <strong class="signal-value {% if ai.signal == 'BUY' %}buy-signal{% elif ai.signal == 'SELL' %}sell-signal{% else %}hold-signal{% endif %}">{{ ai.signal }}</strong>
-            <div class="signal-confidence">Confidence <b>{{ ai.confidence }}%</b></div>
+            <div class="section-heading"><span>AI Composite Signal</span><i class="bi bi-cpu"></i></div>
+            <strong class="signal-value {% if ai.signal in ['BUY', 'STRONG BUY', 'Strong Buy', 'Buy'] %}buy-signal{% elif ai.signal in ['SELL', 'REDUCE', 'AVOID', 'Sell', 'Reduce', 'Avoid'] %}sell-signal{% else %}hold-signal{% endif %}">{{ ai.signal }}</strong>
+            <div class="signal-confidence">Confidence <b>{{ ai.confidence }}%</b> • {{ ai.risk }}</div>
             <p>{{ ai.summary }}</p>
-            <div class="confidence-progress"><div class="confidence-fill" data-width="{{ ai.confidence }}"></div></div>
-            <div class="signal-targets"><div><span>Target</span><strong>₹{{ ai.target }}</strong></div><div><span>Stop Loss</span><strong>₹{{ ai.stop_loss }}</strong></div></div>
+            <div class="confidence-progress"><div class="confidence-fill" style="width: {{ ai.confidence }}%;"></div></div>
+            <div class="signal-targets">
+                <div><span>Target (ATR)</span><strong>₹{{ ai.target }}</strong></div>
+                <div><span>Stop Loss</span><strong>₹{{ ai.stop_loss }}</strong></div>
+                <div><span>Risk/Reward</span><strong>{{ ai.risk_reward or '1:2.0' }}</strong></div>
+            </div>
         </article>
+
         <div class="score-side">
-            <article class="overall-score-card"><span>Overall Score</span><div class="overall-score-circle">{{ ai.overall }}</div><small>{% if ai.overall >= 85 %}Excellent{% elif ai.overall >= 70 %}Good{% else %}Average{% endif %}</small><div class="score-description">{% if ai.signal == 'BUY' %}Strong Buy Candidate{% elif ai.signal == 'SELL' %}Weak Trend{% else %}Stable Company{% endif %}</div></article>
+            <article class="overall-score-card">
+                <span>Overall Multi-Factor Score</span>
+                <div class="overall-score-circle">{{ ai.overall }}</div>
+                <small>{% if ai.overall >= 85 %}Institutional Grade (Strong Buy){% elif ai.overall >= 70 %}Constructive (Buy){% elif ai.overall >= 55 %}Neutral (Hold){% else %}Caution (Reduce/Avoid){% endif %}</small>
+                <div class="score-description">7-Pillar Quantitative Evaluation</div>
+            </article>
+
             <div class="mini-score-pair">
-                <article class="mini-score-card"><span>Fundamental</span><strong>{{ ai.fundamental }}%</strong><div class="mini-progress"><div class="mini-progress-fill" data-width="{{ ai.fundamental }}"></div></div></article>
-                <article class="mini-score-card"><span>Technical</span><strong>{{ ai.technical }}%</strong><div class="mini-progress"><div class="mini-progress-fill" data-width="{{ ai.technical }}"></div></div></article>
+                <article class="mini-score-card">
+                    <span>Fundamental</span><strong>{{ ai.fundamental }}%</strong>
+                    <div class="mini-progress"><div class="mini-progress-fill" style="width: {{ ai.fundamental }}%;"></div></div>
+                </article>
+                <article class="mini-score-card">
+                    <span>Technical</span><strong>{{ ai.technical }}%</strong>
+                    <div class="mini-progress"><div class="mini-progress-fill" style="width: {{ ai.technical }}%;"></div></div>
+                </article>
+                <article class="mini-score-card">
+                    <span>Valuation</span><strong>{{ ai.valuation }}%</strong>
+                    <div class="mini-progress"><div class="mini-progress-fill" style="width: {{ ai.valuation }}%;"></div></div>
+                </article>
+                <article class="mini-score-card">
+                    <span>Momentum</span><strong>{{ ai.momentum }}%</strong>
+                    <div class="mini-progress"><div class="mini-progress-fill" style="width: {{ ai.momentum }}%;"></div></div>
+                </article>
             </div>
         </div>
     </section>
 
+    <!-- PRICE CHART & COMPANY SNAPSHOT -->
     <section class="performance-row dashboard-section">
-        <article class="chart-card price-performance-card"><div class="section-heading"><span>Price Performance</span><h4>Price Chart</h4></div>{% if chart %}{{ chart|safe }}{% else %}<div class="chart-placeholder">Unable to load chart.</div>{% endif %}</article>
-        <aside class="company-snapshot-card"><div class="section-heading"><span>Company Snapshot</span><h4>Key Metrics</h4></div><div class="snapshot-metrics"><div><span>Market Cap</span><strong>{{ stock.market_cap }}</strong></div><div><span>P/E</span><strong>{{ stock.pe }}</strong></div><div><span>EPS</span><strong>{{ stock.eps }}</strong></div></div>{% if stock.website != "N/A" %}<a class="company-website" href="{{ stock.website }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-globe2"></i> Company Website <i class="bi bi-arrow-up-right"></i></a>{% endif %}</aside>
+        <article class="chart-card price-performance-card">
+            <div class="section-heading"><span>Price Performance</span><h4>6-Month Trend &amp; Moving Averages</h4></div>
+            {% if chart %}{{ chart|safe }}{% else %}<div class="chart-placeholder">Unable to load price chart.</div>{% endif %}
+        </article>
+
+        <aside class="company-snapshot-card">
+            <div class="section-heading"><span>Company Snapshot</span><h4>Key Valuation Metrics</h4></div>
+            <div class="snapshot-metrics">
+                <div><span>Market Cap</span><strong>{{ stock.market_cap }}</strong></div>
+                <div><span>P/E Ratio</span><strong>{{ stock.pe }}</strong></div>
+                <div><span>EPS (TTM)</span><strong>{{ stock.eps }}</strong></div>
+                <div><span>Return on Equity</span><strong>{{ stock.roe }}</strong></div>
+                <div><span>Dividend Yield</span><strong>{{ stock.dividend }}</strong></div>
+            </div>
+            {% if stock.website != "N/A" and stock.website != "Not available" %}
+            <a class="company-website" href="{{ stock.website }}" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-globe2"></i> Company Website <i class="bi bi-arrow-up-right"></i>
+            </a>
+            {% endif %}
+        </aside>
     </section>
 
+    <!-- TECHNICAL INDICATORS & KEY PIVOTS (IF AVAILABLE) -->
+    {% if ai.technicals_detail and ai.technicals_detail.available %}
+    <section class="dashboard-section">
+        <div class="fundamentals-panel">
+            <div class="section-heading"><span>Technical Levels</span><h4>Quantitative Indicator Levels &amp; Support/Resistance</h4></div>
+            <div class="fundamentals-list">
+                <div><span>RSI (14)</span><strong>{{ ai.technicals_detail.rsi_14 }}</strong></div>
+                <div><span>Trend</span><strong>{{ ai.technicals_detail.trend_signal }}</strong></div>
+                <div><span>SMA 20</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.sma_20) }}</strong></div>
+                <div><span>SMA 50</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.sma_50) }}</strong></div>
+                <div><span>SMA 200</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.sma_200) }}</strong></div>
+                <div><span>ATR (14)</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.atr_14) }}</strong></div>
+                <div><span>Support 1</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.support_1) }}</strong></div>
+                <div><span>Resistance 1</span><strong>₹{{ "{:,.2f}".format(ai.technicals_detail.resistance_1) }}</strong></div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- FUNDAMENTALS & NEWS -->
     <section class="fundamentals-news-row dashboard-section">
-        <article class="fundamentals-panel"><div class="section-heading"><span>Fundamentals</span><h4>Company Details</h4></div><div class="fundamentals-list"><div><span>Revenue</span><strong>{{ stock.revenue }}</strong></div><div><span>Employees</span><strong>{{ stock.employees }}</strong></div><div><span>Sector</span><strong>{{ stock.sector }}</strong></div><div><span>Industry</span><strong>{{ stock.industry }}</strong></div><div><span>Dividend Yield</span><strong>{{ stock.dividend }}</strong></div><div><span>ROE</span><strong>{{ stock.roe }}</strong></div><div><span>52W Range</span><strong>{{ stock.low52 }} – {{ stock.high52 }}</strong></div></div></article>
-        <aside class="latest-news-card"><div class="section-heading"><span>Latest News</span><h4>Market Updates</h4></div>{% if news %}<div class="news-scroll">{% for article in news %}<article class="news-item"><h5>{{ article.title }}</h5><div class="news-footer"><span>{{ article.publisher }}{% if article.date %} • {{ article.date }}{% endif %}</span>{% if article.url and article.url != "#" %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="read-more-link">Read more</a>{% endif %}</div></article>{% endfor %}</div>{% else %}<div class="placeholder-content">No latest news available.</div>{% endif %}</aside>
+        <article class="fundamentals-panel">
+            <div class="section-heading"><span>Fundamentals</span><h4>Financial Strength &amp; Profile</h4></div>
+            <div class="fundamentals-list">
+                <div><span>Total Revenue</span><strong>{{ stock.revenue }}</strong></div>
+                <div><span>Employees</span><strong>{{ stock.employees }}</strong></div>
+                <div><span>Sector</span><strong>{{ stock.sector }}</strong></div>
+                <div><span>Industry</span><strong>{{ stock.industry }}</strong></div>
+                <div><span>52W High</span><strong>₹{{ stock.high52 }}</strong></div>
+                <div><span>52W Low</span><strong>₹{{ stock.low52 }}</strong></div>
+            </div>
+        </article>
+
+        <aside class="latest-news-card">
+            <div class="section-heading"><span>Latest Verified News</span><h4>Market Updates</h4></div>
+            {% if news %}
+            <div class="news-scroll">
+                {% for article in news %}
+                <article class="news-item">
+                    <h5>{{ article.title }}</h5>
+                    <div class="news-footer">
+                        <span>{{ article.publisher or article.source }}{% if article.date or article.published %} • {{ article.date or article.published }}{% endif %}</span>
+                        {% if article.url and article.url != "#" %}
+                        <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="read-more-link">Read more <i class="bi bi-arrow-up-right"></i></a>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="placeholder-content">No recent news available for this symbol.</div>
+            {% endif %}
+        </aside>
     </section>
 
-    <section class="ai-analysis-panel dashboard-section"><div class="section-heading"><span>AI Analysis</span><h4>Strengths, Risks &amp; Outlook</h4></div><div class="analysis-grid-two"><div class="analysis-section strengths"><h5><i class="bi bi-check2-circle"></i> Strengths</h5><ul>{% for strength in ai.strengths %}<li>{{ strength }}</li>{% endfor %}</ul></div><div class="analysis-section risks"><h5><i class="bi bi-exclamation-triangle"></i> Risks</h5><ul>{% for risk in ai.risks %}<li>{{ risk }}</li>{% endfor %}</ul></div></div><div class="target-grid"><div class="target-box"><small>Target</small><strong>₹{{ ai.target }}</strong></div><div class="target-box"><small>Stop Loss</small><strong>₹{{ ai.stop_loss }}</strong></div><div class="target-box"><small>Horizon</small><strong>{{ ai.time_horizon }}</strong></div></div></section>
+    <!-- AI STRENGTHS, RISKS & HORIZON -->
+    <section class="ai-analysis-panel dashboard-section">
+        <div class="section-heading"><span>AI Strategy Outlook</span><h4>Identified Strengths &amp; Risk Factors</h4></div>
+        <div class="analysis-grid-two">
+            <div class="analysis-section strengths">
+                <h5><i class="bi bi-check2-circle"></i> Key Strengths</h5>
+                <ul>{% for strength in ai.strengths %}<li>{{ strength }}</li>{% endfor %}</ul>
+            </div>
+            <div class="analysis-section risks">
+                <h5><i class="bi bi-exclamation-triangle"></i> Primary Risks</h5>
+                <ul>{% for risk in ai.risks %}<li>{{ risk }}</li>{% endfor %}</ul>
+            </div>
+        </div>
+        <div class="target-grid">
+            <div class="target-box"><small>Calculated Target</small><strong>₹{{ ai.target }}</strong></div>
+            <div class="target-box"><small>Calculated Stop Loss</small><strong>₹{{ ai.stop_loss }}</strong></div>
+            <div class="target-box"><small>Time Horizon</small><strong>{{ ai.time_horizon }}</strong></div>
+        </div>
+    </section>
     {% else %}
-    <div class="empty-state"><i class="bi bi-search"></i><h2>Search Any Stock</h2><p>Search from the dashboard to start analysis.</p></div>
+    <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h2>Search Any NSE / BSE Stock</h2>
+        <p>Type a stock symbol or company name in the search bar above to generate multi-factor intelligence.</p>
+    </div>
     {% endif %}
 </div>
 {% endblock %}
 
-{% block scripts %}<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const watchBtn = document.getElementById("addToWatchlistBtn");
+    if (watchBtn) {
+        watchBtn.addEventListener("click", async () => {
+            const sym = watchBtn.dataset.symbol;
+            if (!sym) return;
+            watchBtn.disabled = true;
+            try {
+                const res = await fetch("/watchlist/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `symbol=${encodeURIComponent(sym)}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    watchBtn.innerHTML = '<i class="bi bi-check-lg"></i> Added';
+                    watchBtn.classList.replace("btn-outline-secondary", "btn-success");
+                } else {
+                    alert(data.message || "Could not add to watchlist.");
+                    watchBtn.disabled = false;
+                }
+            } catch (e) {
+                alert("Network error.");
+                watchBtn.disabled = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

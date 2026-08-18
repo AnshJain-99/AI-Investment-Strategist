@@ -5,58 +5,39 @@
 
 <header class="top-navbar">
 
-    <!-- LEFT SECTION -->
-
+    <!-- LEFT: BRAND / LOGO -->
     <div class="navbar-left">
-
-        <!-- BRAND / LOGO -->
-
-        <a href="/dashboard" class="navbar-brand">
-
+        <a href="/dashboard" class="navbar-brand" title="InvestIQ Home">
             <div class="navbar-brand-icon">
-
                 <i class="bi bi-graph-up-arrow"></i>
-
             </div>
-
             <div class="navbar-brand-text">
-
                 <h4>InvestIQ</h4>
-
                 <span>AI-Powered Investment Intelligence</span>
-
             </div>
-
         </a>
+    </div>
 
-
-        <!-- NAVIGATION LINKS -->
-
-        <nav class="top-nav-links">
-
+    <!-- CENTER: NAVIGATION LINKS -->
+    <nav class="navbar-center" aria-label="Main Navigation">
+        <div class="top-nav-links">
             <a href="/dashboard" class="top-nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
-
                 Dashboard
-
             </a>
-
+            <a href="{{ url_for('portfolio') }}" class="top-nav-item {% if request.endpoint == 'portfolio' %}active{% endif %}">
+                Portfolio
+            </a>
             <a href="/dashboard#market" class="top-nav-item">
-
                 Market
-
             </a>
-
             <a href="{{ url_for('compare') }}" class="top-nav-item {% if request.endpoint in ['compare', 'compare_results'] %}active{% endif %}">
                 Compare Stocks
             </a>
             <a href="{{ url_for('watchlist') }}" class="top-nav-item {% if request.endpoint == 'watchlist' %}active{% endif %}">
-                
                 Watchlist
             </a>
-
-        </nav>
-
-    </div>
+        </div>
+    </nav>
 
 
     <!-- RIGHT SECTION -->
@@ -181,6 +162,14 @@
 
                 <div class="dropdown-divider"></div>
 
+
+                <a href="{{ url_for('portfolio') }}">
+
+                    <i class="bi bi-wallet2"></i>
+
+                    Portfolio
+
+                </a>
 
                 <a href="{{ url_for('profile') }}">
 

@@ -1,8 +1,16 @@
+import os
+from datetime import datetime
 import yfinance as yf
 import plotly.graph_objects as go
 from plotly.offline import plot
-from datetime import datetime
-import os
+import pandas as pd
+
+from services.cache_service import CacheService
+from services.technical_service import TechnicalService
+from services.fundamental_service import FundamentalService
+from services.target_service import TargetService
+from services.scoring_service import ScoringEngine
+from services.news_service import NewsService
 
 
 YFINANCE_CACHE_DIR = os.path.join(
@@ -10,7 +18,6 @@ YFINANCE_CACHE_DIR = os.path.join(
     "instance",
     "yfinance_cache",
 )
-
 os.makedirs(YFINANCE_CACHE_DIR, exist_ok=True)
 
 try:
@@ -27,26 +34,28 @@ class StockService:
 
     @staticmethod
     def get_market_data():
+        cached = CacheService.get("market_data_indices")
+        if cached:
+            return cached
 
         try:
-
             nifty = yf.Ticker("^NSEI")
             sensex = yf.Ticker("^BSESN")
 
             nifty_price = nifty.fast_info.get("lastPrice") or 0
-
             sensex_price = sensex.fast_info.get("lastPrice") or 0
 
-            return {
-                "nifty": f"{nifty_price:,.2f}",
-                "sensex": f"{sensex_price:,.2f}",
+            res = {
+                "nifty": f"{nifty_price:,.2f}" if nifty_price else "--",
+                "sensex": f"{sensex_price:,.2f}" if sensex_price else "--",
                 "status": "Live",
             }
+            if nifty_price and sensex_price:
+                CacheService.set("market_data_indices", res, ttl_seconds=30)
+            return res
 
         except Exception as e:
-
             print("Market Data Error:", e)
-
             return {"nifty": "--", "sensex": "--", "status": "Offline"}
 
     # ==================================================
@@ -55,18 +64,19 @@ class StockService:
 
     @staticmethod
     def get_stock_details(symbol):
+        if not symbol:
+            return None
+
+        clean_symbol = symbol.strip().upper()
+        if "." not in clean_symbol and not clean_symbol.startswith("^"):
+            clean_symbol = f"{clean_symbol}.NS"
+
+        cached = CacheService.get(f"stock_details_{clean_symbol}")
+        if cached:
+            return cached
 
         try:
-
-            # Convert Indian stock automatically
-            # Example:
-            # TCS -> TCS.NS
-
-            if "." not in symbol:
-
-                symbol = symbol.upper() + ".NS"
-
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(clean_symbol)
 
             try:
                 info = ticker.info or {}
@@ -80,43 +90,14 @@ class StockService:
 
             history = ticker.history(period="5d")
 
-            # Day High
-            day_high = format_number(info.get("dayHigh"))
+            # Day High & Low
+            day_high = format_number(info.get("dayHigh") or fast_info.get("dayHigh"))
+            day_low = format_number(info.get("dayLow") or fast_info.get("dayLow"))
 
-            # Day Low
-            day_low = format_number(info.get("dayLow"))
-
-            # Volume
-            def format_volume(value):
-                try:
-                    value = int(value)
-
-                    if value >= 10000000:
-                        return f"{value / 10000000:.2f} Cr"
-
-                    elif value >= 100000:
-                        return f"{value / 100000:.2f} L"
-
-                    elif value >= 1000:
-                        return f"{value / 1000:.1f} K"
-
-                    return f"{value:,}"
-
-                except (TypeError, ValueError):
-                    return "N/A"
-
+            # Volume formatting
             volume = format_volume(info.get("volume") or fast_info.get("lastVolume"))
 
-            # # Market State
-            # market_state = (
-            #     info.get("marketState")
-            #     or "REGULAR"
-            # )
-
-            # -------------------------------
-            # CURRENT STOCK PRICE
-            # -------------------------------
-
+            # Current price resolution
             price_value = (
                 info.get("currentPrice")
                 or info.get("regularMarketPrice")
@@ -125,97 +106,64 @@ class StockService:
 
             if not price_value and not history.empty:
                 close_prices = history["Close"].dropna()
-
                 if not close_prices.empty:
                     price_value = float(close_prices.iloc[-1])
 
-            if price_value is not None:
-
-                price = f"{float(price_value):,.2f}"
-
-            else:
-
-                price = "N/A"
+            price = f"{float(price_value):,.2f}" if price_value is not None else "N/A"
 
             price_change = "0.00%"
-            price_change_value = 0
+            price_change_value = 0.0
             price_change_color = "gray"
 
             try:
                 if len(history) >= 2:
                     latest = float(history["Close"].iloc[-1])
                     previous = float(history["Close"].iloc[-2])
-
                     change = latest - previous
                     percent = (change / previous) * 100
-
                     price_change = f"{percent:+.2f}%"
                     price_change_value = round(percent, 2)
-
-                    if percent > 0:
-                        price_change_color = "green"
-                    elif percent < 0:
-                        price_change_color = "red"
-
+                    price_change_color = "green" if percent > 0 else "red" if percent < 0 else "gray"
             except Exception:
                 pass
 
-            # -------------------------------
-            # RETURN ON EQUITY
-            # -------------------------------
-
             roe = info.get("returnOnEquity")
-
-            if roe is not None:
-
-                roe = f"{roe * 100:.2f}%"
-
-            else:
-
-                roe = "N/A"
-
-            # -------------------------------
-            # DIVIDEND YIELD
-            # -------------------------------
+            roe_str = f"{roe * 100:.2f}%" if roe is not None else "N/A"
 
             dividend = info.get("dividendYield")
+            dividend_str = f"{dividend * 100:.2f}%" if dividend is not None else "N/A"
 
-            if dividend is not None:
-
-                dividend = f"{dividend * 100:.2f}%"
-
-            else:
-
-                dividend = "N/A"
-
-            # -------------------------------
-            # RETURN STOCK INFORMATION
-            # -------------------------------
-
-            return {
-                "symbol": symbol,
-                "name": info.get("longName") or info.get("shortName") or symbol,
+            res = {
+                "symbol": clean_symbol,
+                "display_symbol": clean_symbol.replace(".NS", "").replace(".BO", ""),
+                "name": info.get("longName") or info.get("shortName") or clean_symbol,
                 "price": price,
+                "raw_price": float(price_value) if price_value is not None else None,
                 "price_change": price_change,
                 "price_change_value": price_change_value,
                 "price_change_color": price_change_color,
-                "day_high": day_high if day_high != "N/A" else format_number(fast_info.get("dayHigh")),
-                "day_low": day_low if day_low != "N/A" else format_number(fast_info.get("dayLow")),
+                "day_high": day_high,
+                "day_low": day_low,
                 "volume": volume,
-                # "market_state": market_state,
                 "market_cap": format_market_cap(info.get("marketCap") or fast_info.get("marketCap")),
                 "pe": format_number(info.get("trailingPE")),
                 "eps": format_number(info.get("trailingEps")),
-                "sector": info.get("sector", "N / A"),
+                "sector": info.get("sector", "Others"),
                 "industry": info.get("industry", "N / A"),
                 "revenue": format_market_cap(info.get("totalRevenue")),
-                "roe": roe,
-                "dividend": dividend,
+                "roe": roe_str,
+                "dividend": dividend_str,
                 "employees": format_integer(info.get("fullTimeEmployees")),
                 "high52": format_number(info.get("fiftyTwoWeekHigh") or fast_info.get("yearHigh")),
                 "low52": format_number(info.get("fiftyTwoWeekLow") or fast_info.get("yearLow")),
                 "website": info.get("website", "N / A"),
+                "raw_info": info
             }
+
+            if price_value is not None:
+                CacheService.set(f"stock_details_{clean_symbol}", res, ttl_seconds=60)
+
+            return res
 
         except Exception as e:
             print("Stock Details Error:", e)
@@ -224,66 +172,40 @@ class StockService:
     # ==================================================
     # STOCK PRICE CHART
     # ==================================================
+
     @staticmethod
     def get_stock_chart(symbol):
+        if not symbol:
+            return None
+
+        clean_symbol = symbol.strip().upper()
+        if "." not in clean_symbol and not clean_symbol.startswith("^"):
+            clean_symbol = f"{clean_symbol}.NS"
 
         try:
-
-            # Convert Indian stock symbol automatically
-            # Example: TCS -> TCS.NS
-
-            if "." not in symbol:
-
-                symbol = symbol.upper() + ".NS"
-
-            else:
-
-                symbol = symbol.upper()
-
-            # Download last 6 months stock data
-
             stock_data = yf.download(
-                symbol, period="6mo", interval="1d", progress=False, auto_adjust=False
+                clean_symbol, period="6mo", interval="1d", progress=False, auto_adjust=False
             )
 
-            # Return None if data is unavailable
-
             if stock_data.empty:
-
                 return None
 
-            # Get closing prices
-
             close_price = stock_data["Close"].dropna()
-
-            # Fix yfinance DataFrame format
-
             if hasattr(close_price, "columns"):
-
                 close_price = close_price.iloc[:, 0]
 
-            # Create Plotly chart
-
             figure = go.Figure()
-
             figure.add_trace(
                 go.Scatter(
                     x=close_price.index,
                     y=close_price.values,
                     mode="lines",
-                    name=symbol.replace(".NS", ""),
+                    name=clean_symbol.replace(".NS", ""),
                     line=dict(color="#7C3AED", width=3),
                     fill="none",
-                    hovertemplate=(
-                        "<b>%{x|%d %b %Y}</b>"
-                        "<br>"
-                        "Price: ₹%{y:,.2f}"
-                        "<extra></extra>"
-                    ),
+                    hovertemplate="<b>%{x|%d %b %Y}</b><br>Price: ₹%{y:,.2f}<extra></extra>",
                 )
             )
-
-            # Chart design
 
             figure.update_layout(
                 height=390,
@@ -310,8 +232,6 @@ class StockService:
                 ),
             )
 
-            # Return chart HTML
-
             return plot(
                 figure,
                 output_type="div",
@@ -324,9 +244,7 @@ class StockService:
             )
 
         except Exception as error:
-
             print("Stock Chart Error:", error)
-
             return None
 
     # ==================================================
@@ -335,19 +253,9 @@ class StockService:
 
     @staticmethod
     def get_market_chart(period="6mo"):
-
         try:
-
-            allowed_periods = {
-                "1mo": "1mo",
-                "3mo": "3mo",
-                "6mo": "6mo",
-            }
-
+            allowed_periods = {"1mo": "1mo", "3mo": "3mo", "6mo": "6mo"}
             chart_period = allowed_periods.get(period, "6mo")
-
-            # Download historical data for selected period
-            # for NIFTY 50 and SENSEX
 
             market_data = yf.download(
                 ["^NSEI", "^BSESN"],
@@ -362,36 +270,23 @@ class StockService:
             if market_data.empty:
                 return None
 
-            def close_prices(symbol):
-                """Return one clean closing-price series for a downloaded index."""
+            def close_prices(sym):
                 try:
-                    data = market_data[symbol]
+                    data = market_data[sym]
                     close = data["Close"]
-                    # Some yfinance releases return a one-column DataFrame here.
                     if hasattr(close, "columns"):
                         close = close.iloc[:, 0]
                     return close.dropna()
-                except (KeyError, IndexError, TypeError):
+                except Exception:
                     return None
 
             nifty_close = close_prices("^NSEI")
             sensex_close = close_prices("^BSESN")
 
-            # Do not render partial or malformed Yahoo data as a misleading chart.
-            if nifty_close is None or nifty_close.empty or nifty_close.max() < 1_000:
+            if nifty_close is None or nifty_close.empty or sensex_close is None or sensex_close.empty:
                 return None
-
-            if sensex_close is None or sensex_close.empty or sensex_close.max() < 10_000:
-                return None
-
-            # Create Plotly figure
 
             figure = go.Figure()
-
-            # ------------------------------------------
-            # NIFTY 50 LINE
-            # ------------------------------------------
-
             figure.add_trace(
                 go.Scatter(
                     x=nifty_close.index,
@@ -400,21 +295,9 @@ class StockService:
                     name="NIFTY 50",
                     visible=True,
                     line=dict(color="#7C3AED", width=3),
-                    fill="none",
-                    hovertemplate=(
-                        "<b>NIFTY 50</b>"
-                        "<br>"
-                        "%{x|%d %b %Y}"
-                        "<br>"
-                        "%{y:,.2f}"
-                        "<extra></extra>"
-                    ),
+                    hovertemplate="<b>NIFTY 50</b><br>%{x|%d %b %Y}<br>%{y:,.2f}<extra></extra>",
                 )
             )
-
-            # ------------------------------------------
-            # SENSEX LINE
-            # ------------------------------------------
 
             figure.add_trace(
                 go.Scatter(
@@ -424,21 +307,9 @@ class StockService:
                     name="SENSEX",
                     visible=False,
                     line=dict(color="#7C3AED", width=3),
-                    fill="none",
-                    hovertemplate=(
-                        "<b>SENSEX</b>"
-                        "<br>"
-                        "%{x|%d %b %Y}"
-                        "<br>"
-                        "%{y:,.2f}"
-                        "<extra></extra>"
-                    ),
+                    hovertemplate="<b>SENSEX</b><br>%{x|%d %b %Y}<br>%{y:,.2f}<extra></extra>",
                 )
             )
-
-            # ------------------------------------------
-            # CHART DESIGN
-            # ------------------------------------------
 
             figure.update_layout(
                 height=360,
@@ -448,22 +319,8 @@ class StockService:
                 showlegend=False,
                 hovermode="x unified",
                 template="plotly_white",
-                xaxis=dict(
-                    title="",
-                    showgrid=False,
-                    tickformat="%d %b",
-                    tickfont=dict(color="#8B8F9C", size=11),
-                ),
-                yaxis=dict(
-                    title="",
-                    showgrid=True,
-                    gridcolor="rgba(226, 232, 240, 0.75)",
-                    rangemode="normal",
-                    separatethousands=True,
-                    tickformat=",.0f",
-                    tickfont=dict(color="#8B8F9C", size=11),
-                ),
-                # NIFTY / SENSEX buttons
+                xaxis=dict(showgrid=False, tickformat="%d %b", tickfont=dict(color="#8B8F9C", size=11)),
+                yaxis=dict(showgrid=True, gridcolor="rgba(226, 232, 240, 0.75)", separatethousands=True, tickformat=",.0f", tickfont=dict(color="#8B8F9C", size=11)),
                 updatemenus=[
                     dict(
                         type="buttons",
@@ -477,38 +334,22 @@ class StockService:
                         bordercolor="#DDD6FE",
                         font=dict(color="#6D28D9", size=11),
                         buttons=[
-                            dict(
-                                label="NIFTY 50",
-                                method="update",
-                                args=[{"visible": [True, False]}, {"yaxis.title": ""}],
-                            ),
-                            dict(
-                                label="SENSEX",
-                                method="update",
-                                args=[{"visible": [False, True]}, {"yaxis.title": ""}],
-                            ),
+                            dict(label="NIFTY 50", method="update", args=[{"visible": [True, False]}]),
+                            dict(label="SENSEX", method="update", args=[{"visible": [False, True]}]),
                         ],
                     )
                 ],
             )
 
-            # Return chart HTML
-
             return plot(
                 figure,
                 output_type="div",
                 include_plotlyjs=False,
-                config={
-                    "responsive": True,
-                    "displaylogo": False,
-                    "displayModeBar": False,
-                },
+                config={"responsive": True, "displaylogo": False, "displayModeBar": False},
             )
 
         except Exception as error:
-
             print("Market Chart Error:", error)
-
             return None
 
     # ==================================================
@@ -517,129 +358,27 @@ class StockService:
 
     @staticmethod
     def get_stock_news(symbol):
+        return NewsService.get_stock_news(symbol)
 
-        try:
-
-            # Convert Indian stock automatically
-
-            if "." not in symbol:
-
-                symbol = symbol.upper() + ".NS"
-
-            ticker = yf.Ticker(symbol)
-
-            raw_news = ticker.news or []
-
-            latest_news = []
-
-            # Only show latest 5 news
-
-            for item in raw_news[:5]:
-
-                # New yfinance versions
-                # keep news inside content
-
-                content = item.get("content", item)
-
-                title = content.get("title", "Market News")
-
-                summary = content.get("summary", "")
-
-                # ---------------------------
-                # NEWS LINK
-                # ---------------------------
-
-                news_url = "#"
-
-                canonical_url = content.get("canonicalUrl") or {}
-
-                click_url = content.get("clickThroughUrl") or {}
-
-                if isinstance(canonical_url, dict):
-
-                    news_url = canonical_url.get("url") or news_url
-
-                if news_url == "#" and isinstance(click_url, dict):
-
-                    news_url = click_url.get("url") or news_url
-
-                # Older yfinance structure
-
-                if news_url == "#":
-
-                    news_url = item.get("link") or "#"
-
-                # ---------------------------
-                # NEWS PUBLISHER
-                # ---------------------------
-
-                publisher = content.get("provider", {}) or {}
-
-                if isinstance(publisher, dict):
-
-                    publisher = publisher.get("displayName") or "Yahoo Finance"
-
-                else:
-
-                    publisher = item.get("publisher") or "Yahoo Finance"
-
-                # ---------------------------
-                # NEWS DATE
-                # ---------------------------
-
-                published_date = "Latest"
-
-                publish_time = item.get("providerPublishTime")
-
-                if publish_time:
-
-                    published_date = datetime.fromtimestamp(publish_time).strftime(
-                        "%d %b %Y"
-                    )
-
-                latest_news.append(
-                    {
-                        "title": title,
-                        "summary": summary,
-                        "publisher": publisher,
-                        "date": published_date,
-                        "url": news_url,
-                    }
-                )
-
-            return latest_news
-
-        except Exception as e:
-
-            print("News Error:", e)
-
-            return []
+    # ==================================================
+    # MULTI-FACTOR AI ANALYSIS ENGINE
+    # ==================================================
 
     @staticmethod
     def get_ai_analysis(symbol):
+        if not symbol:
+            return fallback_analysis()
 
-        def fallback_analysis():
-            return {
-                "overall": 50,
-                "fundamental": 50,
-                "technical": 50,
-                "signal": "HOLD",
-                "confidence": 50,
-                "summary": "Live AI analysis is limited because complete market data is unavailable right now. Keep this stock on watch and refresh after live data updates.",
-                "strengths": ["Stock remains trackable", "Live price feed can be refreshed"],
-                "risks": ["Incomplete live data", "Wait for stronger confirmation"],
-                "target": "N/A",
-                "stop_loss": "N/A",
-                "time_horizon": "Data pending",
-            }
+        clean_symbol = symbol.strip().upper()
+        if "." not in clean_symbol and not clean_symbol.startswith("^"):
+            clean_symbol = f"{clean_symbol}.NS"
+
+        cached = CacheService.get(f"ai_analysis_{clean_symbol}")
+        if cached:
+            return cached
 
         try:
-
-            if "." not in symbol:
-                symbol = symbol.upper() + ".NS"
-
-            ticker = yf.Ticker(symbol)
-
+            ticker = yf.Ticker(clean_symbol)
             try:
                 info = ticker.info or {}
             except Exception:
@@ -647,165 +386,93 @@ class StockService:
 
             history = ticker.history(period="6mo")
 
-            if history.empty:
-                return fallback_analysis()
+            # 1. Fundamentals Analysis
+            fundamentals_data = FundamentalService.extract_fundamentals(info)
 
-            close = history["Close"].dropna()
+            # 2. Technicals Analysis
+            technicals_data = TechnicalService.calculate_indicators(history)
 
-            if close.empty:
-                return fallback_analysis()
+            # 3. News & Sentiment
+            news_items = NewsService.get_stock_news(clean_symbol)
+            sentiment_score = NewsService.get_sentiment_score(news_items)
 
-            latest = float(close.iloc[-1])
+            # 4. Multi-Factor Composite Evaluation
+            evaluation = ScoringEngine.evaluate_stock(
+                fundamentals_data=fundamentals_data,
+                technicals_data=technicals_data,
+                news_sentiment_score=sentiment_score
+            )
 
-            sma20 = float(close.tail(20).mean())
+            # 5. ATR / Support-Resistance Targets
+            current_price = technicals_data.get("latest_price", 0) if technicals_data.get("available") else None
+            if not current_price:
+                current_price = info.get("currentPrice") or info.get("regularMarketPrice")
 
-            sma50 = float(close.tail(50).mean())
+            target_data = TargetService.calculate_targets(current_price, technicals_data)
 
-            # -----------------------------
-            # Technical Score
-            # -----------------------------
+            target_val = target_data.get("target_price") if target_data.get("available") else "N/A"
+            stop_val = target_data.get("stop_loss") if target_data.get("available") else "N/A"
+            time_horizon = target_data.get("time_horizon", "6-12 Months")
 
-            technical = 50
-
-            if latest > sma20:
-                technical += 15
-
-            if latest > sma50:
-                technical += 15
-
-            change = ((latest - float(close.iloc[0])) / float(close.iloc[0])) * 100
-
-            if change > 15:
-                technical += 20
-
-            elif change > 5:
-                technical += 10
-
-            technical = min(100, technical)
-
-            # -----------------------------
-            # Fundamental Score
-            # -----------------------------
-
-            fundamental = 50
-
-            pe = info.get("trailingPE")
-
-            roe = info.get("returnOnEquity")
-
-            market_cap = info.get("marketCap")
-
-            if pe and pe < 30:
-                fundamental += 15
-
-            if roe and roe > 0.15:
-                fundamental += 20
-
-            if market_cap and market_cap > 100000000000:
-                fundamental += 15
-
-            fundamental = min(100, fundamental)
-
-            # -----------------------------
-            # Overall
-            # -----------------------------
-
-            overall = round((fundamental * 0.6) + (technical * 0.4))
-
-            # -----------------------------
-            # Recommendation
-            # -----------------------------
-
-            if overall >= 80:
-
-                signal = "BUY"
-
-            elif overall >= 60:
-
-                signal = "HOLD"
-
-            else:
-
-                signal = "SELL"
-
-            confidence = min(95, overall + 5)
-            if signal == "BUY":
-
-                summary = "AI sees supportive fundamentals and positive price momentum. This stock may suit a monitored medium-term entry."
-
-                strengths = [
-                    "Healthy revenue growth",
-                    "Positive technical trend",
-                    "Strong market position",
-                ]
-
-                risks = ["Short-term market volatility", "Sector correction risk"]
-
-            elif signal == "HOLD":
-
-                summary = "AI sees a balanced setup. Momentum is not strong enough for an aggressive call, so monitor confirmation levels."
-
-                strengths = [
-                    "Stable business",
-                    "Balanced financials",
-                    "Long-term potential",
-                ]
-
-                risks = ["Limited short-term upside", "Market uncertainty"]
-
-            else:
-
-                summary = "AI sees weak momentum or below-average financial strength. Risk control is important before taking a position."
-
-                strengths = ["Large market presence"]
-
-                risks = [
-                    "Weak price trend",
-                    "Poor technical indicators",
-                    "High downside risk",
-                ]
-
-            return {
-                "overall": overall,
-                "fundamental": fundamental,
-                "technical": technical,
-                "signal": signal,
-                "confidence": confidence,
-                "summary": summary,
-                "strengths": strengths,
-                "risks": risks,
-                "target": round(latest * 1.10, 2),
-                "stop_loss": round(latest * 0.92, 2),
-                "time_horizon": "6-12 Months",
+            res = {
+                "overall": evaluation["overall_score"],
+                "fundamental": evaluation["factor_scores"]["fundamentals"],
+                "technical": evaluation["factor_scores"]["technicals"],
+                "valuation": evaluation["factor_scores"]["valuation"],
+                "momentum": evaluation["factor_scores"]["momentum"],
+                "sentiment": evaluation["factor_scores"]["sentiment"],
+                "risk_score": evaluation["factor_scores"]["risk"],
+                "signal": evaluation["signal"].upper() if evaluation["signal"] in ["Buy", "Hold", "Sell", "Strong Buy"] else evaluation["signal"],
+                "raw_signal": evaluation["signal"],
+                "confidence": evaluation["confidence"],
+                "risk": evaluation["risk_label"],
+                "summary": evaluation["summary"],
+                "strengths": evaluation["strengths"],
+                "risks": evaluation["risks"],
+                "target": target_val,
+                "stop_loss": stop_val,
+                "risk_reward": target_data.get("risk_reward_ratio", "N/A"),
+                "time_horizon": time_horizon,
+                "technicals_detail": technicals_data,
+                "fundamentals_detail": fundamentals_data,
             }
 
+            CacheService.set(f"ai_analysis_{clean_symbol}", res, ttl_seconds=300) # 5 min cache
+            return res
+
         except Exception as e:
-
-            print("AI Error:", e)
-
+            print(f"AI Analysis Error for {symbol}:", e)
             return fallback_analysis()
+
+    # ==================================================
+    # WATCHLIST SUMMARY
+    # ==================================================
 
     @staticmethod
     def get_watchlist_summary(symbols):
+        if not symbols:
+            return {
+                "holdings": 0,
+                "gainers": 0,
+                "losers": 0,
+                "avg_return": 0.0,
+                "allocation": [],
+                "stocks": [],
+            }
 
-        holdings = len(symbols)
+        stocks = []
         gainers = 0
         losers = 0
-        total_change = 0
-
+        total_change = 0.0
         sector_count = {}
-        stocks = []
 
         for symbol in symbols:
-
             stock = StockService.get_stock_details(symbol)
-
             if not stock:
                 continue
 
             stocks.append(stock)
-
-            change = stock.get("price_change_value", 0)
+            change = stock.get("price_change_value", 0.0)
             total_change += change
 
             if change > 0:
@@ -814,32 +481,23 @@ class StockService:
                 losers += 1
 
             sector = stock.get("sector") or "Others"
-
-            if sector == "N / A":
+            if sector in ["N / A", "Not available", "N/A"]:
                 sector = "Others"
-
             sector_count[sector] = sector_count.get(sector, 0) + 1
 
-        avg_return = round(total_change / len(stocks), 2) if stocks else 0
+        avg_return = round(total_change / len(stocks), 2) if stocks else 0.0
 
         allocation = []
-
         for sector, count in sector_count.items():
-
-            allocation.append(
-                {
-                    "sector": sector,
-                    "count": count,
-                    "percentage": (
-                        round((count / len(stocks)) * 100, 1) if stocks else 0
-                    ),
-                }
-            )
-
+            allocation.append({
+                "sector": sector,
+                "count": count,
+                "percentage": round((count / len(stocks)) * 100, 1) if stocks else 0.0,
+            })
         allocation.sort(key=lambda x: x["count"], reverse=True)
 
         return {
-            "holdings": holdings,
+            "holdings": len(stocks),
             "gainers": gainers,
             "losers": losers,
             "avg_return": avg_return,
@@ -852,132 +510,76 @@ class StockService:
 # HELPER FUNCTIONS
 # ==================================================
 
+def fallback_analysis():
+    return {
+        "overall": 50,
+        "fundamental": 50,
+        "technical": 50,
+        "valuation": 50,
+        "momentum": 50,
+        "sentiment": 50,
+        "risk_score": 50,
+        "signal": "HOLD",
+        "raw_signal": "Hold",
+        "confidence": 50,
+        "risk": "Moderate Risk",
+        "summary": "Live AI analysis is limited because complete market data is unavailable right now. Keep this stock on watch and refresh after live data updates.",
+        "strengths": ["Stock remains trackable with active listing"],
+        "risks": ["Incomplete live feeds - awaiting confirmation"],
+        "target": "N/A",
+        "stop_loss": "N/A",
+        "risk_reward": "N/A",
+        "time_horizon": "Data pending",
+    }
+
 
 def format_market_cap(value):
-
     if value is None:
-
         return "N/A"
-
-    if value >= 1_000_000_000_000:
-
-        return f"₹" f"{value / 1_000_000_000_000:.2f}" f" T"
-
-    if value >= 1_000_000_000:
-
-        return f"₹" f"{value / 1_000_000_000:.2f}" f" B"
-
-    if value >= 10_000_000:
-
-        return f"₹" f"{value / 10_000_000:.2f}" f" Cr"
-
-    return f"₹{value:,.0f}"
+    try:
+        val = float(value)
+        if val >= 1_000_000_000_000:
+            return f"₹{val / 1_000_000_000_000:.2f} T"
+        if val >= 1_000_000_000:
+            return f"₹{val / 1_000_000_000:.2f} B"
+        if val >= 10_000_000:
+            return f"₹{val / 10_000_000:.2f} Cr"
+        if val >= 100_000:
+            return f"₹{val / 100_000:.2f} L"
+        return f"₹{val:,.0f}"
+    except (ValueError, TypeError):
+        return "N/A"
 
 
 def format_number(value):
-
     if value is None:
-
         return "N/A"
-
     try:
-
         return f"{float(value):,.2f}"
-
     except Exception:
-
         return value
 
 
 def format_integer(value):
-
     if value is None:
-
         return "N/A"
-
     try:
-
         return f"{int(value):,}"
-
     except Exception:
-
         return value
 
 
-def generate_ai_summary(ai, stock):
-    summary = []
-
-    if ai["signal"] == "BUY":
-        summary.append(
-            f"{stock['name']} shows strong investment potential based on current market data."
-        )
-
-    elif ai["signal"] == "HOLD":
-        summary.append(f"{stock['name']} is currently showing neutral signals.")
-
-    else:
-        summary.append(f"{stock['name']} is showing weak momentum.")
-
-    if ai["fundamental"] >= 80:
-        summary.append("Fundamental indicators are healthy.")
-
-    elif ai["fundamental"] >= 60:
-        summary.append("Fundamentals are average.")
-
-    else:
-        summary.append("Fundamentals need improvement.")
-
-    if ai["technical"] >= 80:
-        summary.append("Technical momentum is positive.")
-
-    elif ai["technical"] >= 60:
-        summary.append("Technical trend is neutral.")
-
-    else:
-        summary.append("Technical trend remains weak.")
-
-    strengths = []
-
+def format_volume(value):
+    if value is None:
+        return "N/A"
     try:
-        if stock["pe"] != "N/A" and float(str(stock["pe"]).replace(",", "")) < 25:
-            strengths.append("Attractive valuation")
-    except (ValueError, TypeError):
-        pass
-
-    if ai["technical"] >= 75:
-        strengths.append("Positive momentum")
-
-    if ai["fundamental"] >= 80:
-        strengths.append("Strong fundamentals")
-
-    risks = []
-
-    if stock["roe"] == "N/A":
-        risks.append("ROE data unavailable")
-
-    else:
-        try:
-            roe_val = float(str(stock["roe"]).replace("%", "").replace("+", "").strip())
-            if roe_val < 10:
-                risks.append("Low return on equity")
-        except (ValueError, TypeError):
-            pass
-
-    if ai["technical"] < 60:
-        risks.append("Weak momentum")
-
-    if ai["overall"] >= 85:
-        risk = "Low"
-
-    elif ai["overall"] >= 70:
-        risk = "Medium"
-
-    else:
-        risk = "High"
-
-    return {
-        "summary": " ".join(summary),
-        "strengths": strengths,
-        "risks": risks,
-        "risk": risk,
-    }
+        val = int(value)
+        if val >= 10_000_000:
+            return f"{val / 10_000_000:.2f} Cr"
+        elif val >= 100_000:
+            return f"{val / 100_000:.2f} L"
+        elif val >= 1_000:
+            return f"{val / 1_000:.1f} K"
+        return f"{val:,}"
+    except (TypeError, ValueError):
+        return "N/A"

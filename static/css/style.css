@@ -34,6 +34,13 @@ APP LAYOUT
    LAYOUT V2
 ====================================================== */
 
+.app-layout {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .layout {
     display: flex;
     min-height: 100vh;
@@ -50,7 +57,14 @@ APP LAYOUT
 .page-content {
     max-width: 1450px;
     width: 100%;
-    padding: 28px;
+    margin: 0 auto;
+    padding: 24px 28px;
+}
+
+@media (max-width: 768px) {
+    .page-content {
+        padding: 16px 12px;
+    }
 }
 
 /*==========================
@@ -1112,4 +1126,17 @@ img, svg {
         font-size: 14px;
         padding: 10px 14px;
     }
+}
+
+/* =====================================================
+   GLOBAL MODAL LAYERING SYSTEM
+===================================================== */
+.modal-backdrop {
+    z-index: 10000 !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.modal {
+    z-index: 10050 !important;
 }

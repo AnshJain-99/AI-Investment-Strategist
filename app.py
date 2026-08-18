@@ -4,13 +4,26 @@ import os
 
 # from datetime import datetime
 from datetime import datetime, timedelta, timezone
+
+# from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import feedparser
 import random
 import secrets
 import smtplib
 import ssl
 from email.message import EmailMessage
-from database.models import db, User, Watchlist
+from database.models import (
+    db,
+    User,
+    Watchlist,
+    Portfolio,
+    Holding,
+    Transaction,
+    PortfolioSnapshot,
+    StockAlert,
+    AIAnalysisCache,
+)
 from sqlalchemy.exc import IntegrityError
 
 
@@ -27,6 +40,11 @@ from flask_login import (
 from config import Config
 
 from services.stock_service import StockService
+from services.portfolio_service import PortfolioService
+from services.llm_service import LLMService
+from services.cache_service import CacheService
+from services.news_service import NewsService
+from services.scoring_service import ScoringEngine
 
 import requests
 
@@ -700,6 +718,10 @@ def register():
             return redirect(url_for("register"))
 
         # ------------------------------
+
+        # ------------------------------
+        # CHECK PASSWORDS
+        # ------------------------------
         # HASH PASSWORD
         # ------------------------------
 
@@ -712,7 +734,6 @@ def register():
         new_user = User(full_name=fullname, email=email, password=hashed)
 
         db.session.add(new_user)
-
         db.session.commit()
 
         flash("Registration Successful", "success")
@@ -726,186 +747,85 @@ def register():
 # DASHBOARD
 # ==================================================
 
-
-# ==================================================
-# DASHBOARD
-# ==================================================
-
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
-
     # Get current NIFTY and SENSEX values
     market = StockService.get_market_data()
-
-    # Chart loads async from /api/dashboard-market-chart so dashboard opens fast.
     market_chart = None
 
-    # ==========================================
-    # DASHBOARD CARD INFORMATION
-    # ==========================================
+    # 1. Real Authenticated User Portfolio Summary
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    portfolio_summary = PortfolioService.get_portfolio_summary(user_portfolio.id)
 
+    if portfolio_summary["has_holdings"]:
+        dashboard_data = {
+            "portfolio_value": f"₹{portfolio_summary['total_value']:,.2f}",
+            "today_change": f"{portfolio_summary['today_pnl_pct']:+.2f}%",
+            "total_return": f"{portfolio_summary['total_return_pct']:+.2f}%",
+            "total_pnl": f"₹{portfolio_summary['total_pnl']:,.2f}",
+            "holdings_count": portfolio_summary["holdings_count"],
+            "health_score": portfolio_summary["health_score"],
+            "health_label": portfolio_summary["health_label"],
+            "nifty": market["nifty"],
+            "nifty_change": market["status"],
+            "sensex": market["sensex"],
+            "sensex_change": market["status"],
+        }
+        holdings = portfolio_summary["holdings"][:5]
+        allocation = portfolio_summary["sector_allocation"]
+    else:
+        dashboard_data = {
+            "portfolio_value": "₹0.00",
+            "today_change": "0.00%",
+            "total_return": "0.00%",
+            "total_pnl": "₹0.00",
+            "holdings_count": 0,
+            "health_score": None,
+            "health_label": "No Holdings",
+            "nifty": market["nifty"],
+            "nifty_change": market["status"],
+            "sensex": market["sensex"],
+            "sensex_change": market["status"],
+        }
+        holdings = []
+        allocation = []
 
-    dashboard_data = {
-        "portfolio_value": "₹0",
-        "today_change": "+0.00%",
-        "nifty": market["nifty"],
-        "nifty_change": market["status"],
-        "sensex": market["sensex"],
-        "sensex_change": market["status"],
-    }
-
-    user_id = getattr(current_user, "id", None)
-    watchlist_stocks = (
-        Watchlist.query.filter_by(user_id=user_id).all()
-        if user_id
-        else []
-    )
-    watchlist_symbols = [stock.symbol for stock in watchlist_stocks]
-    holding_symbols = watchlist_symbols[:5]
-    snapshot_cache = {}
-
-    def cached_stock_snapshot(symbol):
-        if symbol not in snapshot_cache:
-            snapshot_cache[symbol] = get_dashboard_stock_snapshot(symbol)
-
-        return snapshot_cache[symbol].copy()
-
-    if not holding_symbols:
-        holding_symbols = [
-            "RELIANCE.NS",
-            "TCS.NS",
-            "INFY.NS",
-            "HDFCBANK.NS",
-            "SBIN.NS",
-        ]
-
-    holdings = []
-
-    for index, symbol in enumerate(holding_symbols):
-        try:
-            snapshot = cached_stock_snapshot(symbol)
-        except Exception as error:
-            print("Dashboard holding error:", error)
-            snapshot = {
-                "symbol": symbol.replace(".NS", "").replace(".BO", ""),
-                "name": symbol,
-                "price": "N/A",
-                "change_percent": "+0.00%",
-                "change_value": 0.0,
-                "signal": "HOLD",
-            }
-
-        snapshot["weight"] = [28, 22, 18, 17, 15][index % 5]
-        holdings.append(snapshot)
-
-    live_holdings = [stock for stock in holdings if stock.get("is_live")]
-    portfolio_value = sum(parse_price_value(stock.get("price")) for stock in live_holdings)
-    average_change = (
-        sum(stock.get("change_value", 0.0) for stock in live_holdings) / len(live_holdings)
-        if live_holdings
-        else 0.0
-    )
-
-    if live_holdings:
-        dashboard_data["portfolio_value"] = f"₹{portfolio_value:,.2f}"
-        dashboard_data["today_change"] = f"{average_change:+.2f}%"
-
+    # 2. Live Market Movers (Gainers / Losers)
     live_movers = get_dashboard_batch_snapshots(MARKET_WATCH_SYMBOLS)
-    recommended_pool = random.sample(
-        live_movers,
-        min(8, len(live_movers)),
-    )
-
-    recommended_stocks = list(recommended_pool)
-
-    if len(recommended_stocks) < 4:
-        existing_symbols = {stock["symbol"] for stock in recommended_stocks}
-        fill_stocks = [
-            stock
-            for stock in sorted(
-                live_movers,
-                key=lambda item: item["change_value"],
-                reverse=True,
-            )
-            if stock["symbol"] not in existing_symbols
-        ]
-        recommended_stocks.extend(fill_stocks[: 4 - len(recommended_stocks)])
-
-    recommended_stocks = sorted(
-        recommended_stocks,
-        key=lambda stock: stock["change_value"],
-        reverse=True,
-    )[:4]
-
     top_gainers = sorted(
-        [stock for stock in live_movers if stock["change_value"] > 0],
-        key=lambda stock: stock["change_value"],
+        [stock for stock in live_movers if stock.get("change_value", 0) > 0],
+        key=lambda stock: stock.get("change_value", 0),
         reverse=True,
     )[:3]
 
     top_losers = sorted(
-        [stock for stock in live_movers if stock["change_value"] < 0],
-        key=lambda stock: stock["change_value"],
+        [stock for stock in live_movers if stock.get("change_value", 0) < 0],
+        key=lambda stock: stock.get("change_value", 0),
     )[:3]
 
+    # 3. Deterministic Scored Recommendations from Active Universe
+    recommended_candidates = [
+        "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
+        "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS"
+    ]
+    scored_pool = []
+    for sym in recommended_candidates:
+        try:
+            snap = get_dashboard_stock_snapshot(sym)
+            if snap and snap.get("is_live"):
+                ai_eval = StockService.get_ai_analysis(sym)
+                snap["signal"] = ai_eval.get("signal", "HOLD")
+                snap["overall_score"] = ai_eval.get("overall", 50)
+                scored_pool.append(snap)
+        except Exception:
+            pass
 
-    # ==========================================
-    # LIVE INDIAN STOCK MARKET NEWS
-    # ==========================================
+    scored_pool.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
+    recommended_stocks = scored_pool[:4]
 
-    market_news = []
-
-    try:
-
-        news_feed = feedparser.parse(
-            "https://news.google.com/"
-            "rss/search?"
-            "q=Indian+stock+market+"
-            "NIFTY+SENSEX"
-            "&hl=en-IN"
-            "&gl=IN"
-            "&ceid=IN:en"
-        )
-
-        # Get latest five news articles
-        for article in news_feed.entries[:5]:
-
-            market_news.append(
-                {
-                    "title": article.get(
-                        "title",
-                        "Market news " "unavailable",
-                    ),
-                    "link": article.get(
-                        "link",
-                        "#",
-                    ),
-                    "published": article.get(
-                        "published",
-                        "Recently",
-                    ),
-                    "source": article.get(
-                        "source",
-                        {},
-                    ).get(
-                        "title",
-                        "Market News",
-                    ),
-                }
-            )
-
-    except Exception as error:
-
-        print(
-            "Market news error:",
-            error,
-        )
-
-    # ==========================================
-    # SEND DATA TO DASHBOARD
-    # ==========================================
+    # 4. Live Market News
+    market_news = NewsService.get_market_news()
 
     return render_template(
         "dashboard.html",
@@ -913,15 +833,12 @@ def dashboard():
         market_chart=market_chart,
         market_news=market_news,
         holdings=holdings,
+        portfolio_summary=portfolio_summary,
+        allocation=allocation,
         recommended_stocks=recommended_stocks,
         top_gainers=top_gainers,
         top_losers=top_losers,
     )
-
-
-# ==================================================
-# DYNAMIC STOCK SEARCH API
-# ==================================================
 
 
 @app.route("/api/search-stocks")
@@ -1027,131 +944,196 @@ def stock_search():
 
 
 # ==================================================
-# ASK AI STOCK ASSISTANT
+# PORTFOLIO MANAGEMENT
 # ==================================================
 
+@app.route("/portfolio")
+@login_required
+def portfolio():
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    summary = PortfolioService.get_portfolio_summary(user_portfolio.id)
+    transactions = (
+        Transaction.query.filter_by(portfolio_id=user_portfolio.id)
+        .order_by(Transaction.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return render_template(
+        "portfolio.html",
+        portfolio=user_portfolio,
+        summary=summary,
+        transactions=transactions,
+    )
+
+
+@app.route("/api/portfolio/summary")
+@login_required
+def api_portfolio_summary():
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    summary = PortfolioService.get_portfolio_summary(user_portfolio.id)
+    return jsonify({"success": True, "data": summary})
+
+
+@app.route("/api/portfolio/buy", methods=["POST"])
+@login_required
+def api_portfolio_buy():
+    data = request.get_json(silent=True) or request.form
+    symbol = (data.get("symbol") or "").strip()
+    try:
+        qty = float(data.get("quantity", 0))
+        price = float(data.get("price", 0))
+        fees = float(data.get("fees", 0.0) or 0.0)
+        notes = (data.get("notes") or "").strip()
+
+        if not symbol or qty <= 0 or price <= 0:
+            return jsonify({
+                "success": False,
+                "message": "Please provide a valid stock symbol, positive quantity, and purchase price.",
+            }), 400
+
+        user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+        holding, txn = PortfolioService.record_buy(
+            portfolio_id=user_portfolio.id,
+            user_id=current_user.id,
+            symbol=symbol,
+            quantity=qty,
+            price=price,
+            fees=fees,
+            notes=notes,
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Successfully purchased {qty:g} shares of {holding.symbol} at ₹{price:,.2f}.",
+            "holding": {
+                "id": holding.id,
+                "symbol": holding.symbol,
+                "quantity": holding.quantity,
+                "avg_price": holding.average_buy_price,
+            },
+        })
+    except Exception as error:
+        return jsonify({"success": False, "message": str(error)}), 400
+
+
+@app.route("/api/portfolio/sell", methods=["POST"])
+@login_required
+def api_portfolio_sell():
+    data = request.get_json(silent=True) or request.form
+    symbol = (data.get("symbol") or "").strip()
+    try:
+        qty = float(data.get("quantity", 0))
+        price = float(data.get("price", 0))
+        fees = float(data.get("fees", 0.0) or 0.0)
+        notes = (data.get("notes") or "").strip()
+
+        if not symbol or qty <= 0 or price <= 0:
+            return jsonify({
+                "success": False,
+                "message": "Please provide a valid stock symbol, positive quantity, and selling price.",
+            }), 400
+
+        user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+        holding, txn = PortfolioService.record_sell(
+            portfolio_id=user_portfolio.id,
+            user_id=current_user.id,
+            symbol=symbol,
+            quantity=qty,
+            price=price,
+            fees=fees,
+            notes=notes,
+        )
+
+        pnl_str = f"+₹{txn.realized_pnl:,.2f}" if txn.realized_pnl >= 0 else f"-₹{abs(txn.realized_pnl):,.2f}"
+        return jsonify({
+            "success": True,
+            "message": f"Successfully sold {qty:g} shares of {symbol} at ₹{price:,.2f}. Realized P&L: {pnl_str}",
+            "realized_pnl": txn.realized_pnl,
+            "remaining_qty": holding.quantity if holding else 0.0,
+        })
+    except Exception as error:
+        return jsonify({"success": False, "message": str(error)}), 400
+
+
+@app.route("/api/portfolio/analyze-ai", methods=["POST"])
+@login_required
+def api_portfolio_analyze_ai():
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    summary = PortfolioService.get_portfolio_summary(user_portfolio.id)
+    analysis = LLMService.analyze_portfolio_ai(summary)
+    return jsonify(analysis)
+
+
+@app.route("/api/portfolio/transactions")
+@login_required
+def api_portfolio_transactions():
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    txns = (
+        Transaction.query.filter_by(portfolio_id=user_portfolio.id)
+        .order_by(Transaction.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    result = [
+        {
+            "id": t.id,
+            "symbol": t.symbol,
+            "display_symbol": t.symbol.replace(".NS", "").replace(".BO", ""),
+            "stock_name": t.stock_name,
+            "type": t.transaction_type,
+            "quantity": t.quantity,
+            "price": t.price,
+            "total_amount": t.total_amount,
+            "fees": t.fees,
+            "realized_pnl": t.realized_pnl,
+            "notes": t.notes,
+            "date": t.created_at.strftime("%d %b %Y, %I:%M %p") if t.created_at else "",
+        }
+        for t in txns
+    ]
+    return jsonify({"success": True, "transactions": result})
+
+
+@app.route("/api/portfolio/holding/<int:holding_id>", methods=["DELETE", "POST"])
+@login_required
+def api_portfolio_delete_holding(holding_id):
+    user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
+    holding = Holding.query.filter_by(id=holding_id, portfolio_id=user_portfolio.id).first()
+    if not holding:
+        return jsonify({"success": False, "message": "Holding not found."}), 404
+
+    db.session.delete(holding)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Holding removed successfully."})
+
+
+# ==================================================
+# ASK AI STOCK ASSISTANT
+# ==================================================
 
 @app.route("/api/ask-ai", methods=["POST"])
 @login_required
 def ask_ai():
-
     payload = request.get_json(silent=True) or {}
-    question = (payload.get("question") or "").strip()
+    question = (payload.get("question") or payload.get("message") or "").strip()
 
     if not question:
-        return jsonify(
-            {
-                "success": False,
-                "message": "Please enter a stock question.",
-            }
-        ), 400
-
-    api_key = os.getenv("OPENROUTER_API_KEY") or app.config.get("OPENROUTER_API_KEY")
-
-    if not api_key:
-        return jsonify(
-            {
-                "success": False,
-                "message": (
-                    "OpenRouter API key is not configured. "
-                    "Add OPENROUTER_API_KEY in your .env file."
-                ),
-            }
-        ), 500
+        return jsonify({
+            "success": False,
+            "message": "Please enter a stock or portfolio question.",
+        }), 400
 
     detected_symbol = detect_stock_from_question(question)
-    stock_context = get_ai_stock_context(detected_symbol)
+    stock_context = get_ai_stock_context(detected_symbol) if detected_symbol else None
 
-    system_prompt = (
-        "You are InvestIQ, an AI-powered investment intelligence assistant. "
-        "Reply in English only. Never use Hindi, Hinglish, or Romanized Hindi, "
-        "even if the user writes in those languages. "
-        "Use the supplied live market context when available. "
-        "Keep the response concise (under 180 words), practical, and easy to scan. "
-        "Use short plain-text paragraphs; do not use Markdown, headings, or asterisks. "
-        "Cover trend, key risk, and what to watch where relevant. Do not promise "
-        "guaranteed returns. Add a one-sentence educational disclaimer only for "
-        "buy, sell, or investment recommendations."
+    result = LLMService.ask_financial_assistant(
+        question=question,
+        user_id=current_user.id,
+        current_stock_context=stock_context,
     )
-
-    models_to_try = [
-        "openai/gpt-4o-mini",
-        "openai/gpt-4o",
-    ]
-
-    answer = None
-    last_error = None
-
-    for model in models_to_try:
-        try:
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": request.host_url.rstrip("/"),
-                    "X-Title": "InvestIQ",
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {
-                            "role": "user",
-                            "content": (
-                                f"Live context:\n{stock_context}\n\n"
-                                f"User question:\n{question}\n\n"
-                                "Respond in English only."
-                            ),
-                        },
-                    ],
-                    "temperature": 0.4,
-                    "max_tokens": 400,
-                },
-                timeout=20,
-            )
-
-            if response.status_code == 200:
-                ai_data = response.json()
-                answer = (
-                    ai_data.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                    .strip()
-                )
-                if answer:
-                    break
-            else:
-                last_error = f"Model {model} returned HTTP {response.status_code}: {response.text}"
-                print("OpenRouter error:", last_error)
-        except Exception as error:
-            last_error = str(error)
-            print(f"Ask AI model {model} error:", error)
-
-    if answer:
-        return jsonify(
-            {
-                "success": True,
-                "answer": answer,
-                "symbol": detected_symbol,
-            }
-        )
-
-    fallback_answer = (
-        "The AI service is temporarily unavailable. "
-        f"{stock_context} "
-        "Review the price trend, volume, and recent news before making a decision. "
-        "This is educational information, not financial advice."
-    )
-
-    return jsonify(
-        {
-            "success": False,
-            "answer": fallback_answer,
-            "symbol": detected_symbol,
-            "message": "AI service temporarily unavailable.",
-        }
-    ), 503
+    result["symbol"] = detected_symbol
+    status_code = 200 if result.get("success") else 503
+    return jsonify(result), status_code
 
 
 # ==================================================
@@ -1165,26 +1147,23 @@ def analysis():
 
     symbol = request.args.get("symbol", "").strip()
 
+
+
     if not symbol:
         return render_template(
             "analysis.html", stock=None, chart=None, news=[], ai=None
         )
 
     # Get company information
-
     stock = StockService.get_stock_details(symbol)
 
     # Get six-month stock chart
-
     chart = StockService.get_stock_chart(symbol)
 
     # Get latest company news
-
     news = StockService.get_stock_news(symbol)
 
     ai = StockService.get_ai_analysis(symbol)
-
-    print("AI Analysis:", ai)
 
     return render_template("analysis.html", stock=stock, chart=chart, news=news, ai=ai)
 
@@ -1492,6 +1471,7 @@ def compare_results():
                     if info.get("dividendYield") is not None
                     else "N/A"
                 ),
+
                 "sector": (info.get("sector") or "N/A"),
                 "industry": (info.get("industry") or "N/A"),
                 "website": (info.get("website") or "N/A"),
@@ -1537,7 +1517,7 @@ def compare_results():
 
                 except Exception as chart_error:
                     print(
-                        (f"Historical chart error for {clean_symbol} {range_name}:"),
+                        f"Historical chart error for {clean_symbol} {range_name}:",
                         chart_error,
                     )
 
@@ -1551,11 +1531,7 @@ def compare_results():
                     )
 
         except Exception as error:
-            print(
-                (f"Comparison data error for {symbol}:"),
-                error,
-            )
-
+            print(f"Comparison data error for {symbol}:", error)
             comparison_data.append(
                 {
                     "symbol": symbol,
@@ -1570,14 +1546,13 @@ def compare_results():
                     "sector": "N/A",
                     "industry": "N/A",
                     "website": "N/A",
-                    "description": ("Company information is currently unavailable."),
+                    "description": "Company information is currently unavailable.",
                 }
             )
 
     return render_template(
         "compare_results.html",
         stocks=comparison_data,
-        # Send historical data to HTML
         chart_data=chart_data,
     )
 
@@ -1595,7 +1570,7 @@ def watchlist():
 @login_required
 def add_to_watchlist():
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or request.form or {}
 
     symbol = data.get("symbol", "").strip().upper()
 
@@ -1623,7 +1598,7 @@ def add_to_watchlist():
 @login_required
 def remove_from_watchlist():
 
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or request.form or {}
 
     symbol = data.get("symbol", "").strip().upper()
 
@@ -1637,17 +1612,11 @@ def remove_from_watchlist():
     return jsonify({"success": True})
 
 
-# ==================================================
-# WATCHLIST SUMMARY API
-# ==================================================
-
-
 @app.route("/api/watchlist-summary")
 @login_required
 def watchlist_summary():
 
     try:
-
         watchlist = Watchlist.query.filter_by(user_id=current_user.id).all()
 
         symbols = [stock.symbol for stock in watchlist]

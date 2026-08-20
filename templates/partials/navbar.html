@@ -373,18 +373,9 @@
 
 
                     suggestionBox.innerHTML = `
-
-                    <div class="search-loading">
-
-                        <span
-                            class="spinner-border
-                                   spinner-border-sm">
-                        </span>
-
-                        Searching stocks...
-
+                    <div class="search-loading" style="padding: 12px 16px; display: flex; justify-content: center;">
+                        ${window.getTradingSpinnerHTML ? window.getTradingSpinnerHTML({ size: 'sm', text: 'Searching Market...', centered: true }) : 'Searching stocks...'}
                     </div>
-
                 `;
 
 
@@ -729,7 +720,7 @@
                 const isOpen = dropdown.classList.toggle("show");
                 button.setAttribute("aria-expanded", String(isOpen));
                 if (isOpen) {
-                    list.innerHTML = '<div class="notification-loading"><i class="bi bi-arrow-repeat"></i> Loading live updates…</div>';
+                    list.innerHTML = `<div class="notification-loading" style="padding: 14px; display: flex; justify-content: center;">${window.getTradingSpinnerHTML ? window.getTradingSpinnerHTML({ size: 'sm', text: 'Loading live updates...', centered: true }) : 'Loading live updates...'}</div>`;
                     loadNotifications();
                 }
             });

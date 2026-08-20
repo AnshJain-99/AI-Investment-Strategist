@@ -1062,6 +1062,12 @@ border-radius:50%;
     box-shadow: 0 2px 8px rgba(76, 29, 149, .04);
 }
 
+.chat-message.loading {
+    background: #ffffff;
+    border: 1px solid #ddd6fe;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, .08);
+}
+
 .chat-message.user {
     align-self: flex-end;
     color: #ffffff;

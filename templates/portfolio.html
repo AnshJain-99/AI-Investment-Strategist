@@ -127,8 +127,21 @@
 
         <div class="ai-advisor-content" id="aiAdvisorContent">
             <div class="ai-loading-state">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p>Analyzing portfolio weights, sector concentration, and risk parameters...</p>
+                <div class="trading-spinner-container">
+                    <div class="trading-spinner">
+                        <div class="trading-spinner-ring"></div>
+                        <div class="trading-spinner-bars">
+                            <div class="candlestick c1"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c2"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c3"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c4"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c5"><div class="wick"></div><div class="body"></div></div>
+                        </div>
+                        <div class="trading-spinner-glow"></div>
+                    </div>
+                    <div class="trading-spinner-label">Analyzing Portfolio Health</div>
+                    <div class="trading-spinner-subtext">Evaluating asset allocation, sector concentration, and risk parameters...</div>
+                </div>
             </div>
         </div>
     </section>

@@ -290,9 +290,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (analyzeBtn && aiPanel && aiContent) {
         analyzeBtn.addEventListener("click", async () => {
             aiPanel.style.display = "block";
-            aiContent.innerHTML = `
+            aiContent.innerHTML = window.getTradingSpinnerHTML ? window.getTradingSpinnerHTML({
+                size: 'md',
+                text: 'Analyzing Portfolio Health',
+                subtext: 'Evaluating asset allocation, sector concentration, and risk parameters...'
+            }) : `
                 <div class="ai-loading-state">
-                    <div class="spinner-border text-primary" role="status"></div>
                     <p class="mt-2">Analyzing portfolio asset allocation, concentration risks, and performance...</p>
                 </div>
             `;

@@ -21,10 +21,10 @@ class TargetService:
             }
 
         try:
-            atr = technicals_data.get("atr_14") or (current_price * 0.02)
+            atr = technicals_data.get("atr_14") or technicals_data.get("risk_metrics", {}).get("atr") or (current_price * 0.02)
             support_1 = technicals_data.get("support_1") or (current_price - (1.5 * atr))
             resistance_1 = technicals_data.get("resistance_1") or (current_price + (2.5 * atr))
-            trend_signal = technicals_data.get("trend_signal", "Neutral")
+            trend_signal = technicals_data.get("trend_signal") or technicals_data.get("trend") or "Neutral"
 
             # Determine stop loss below primary support level or 1.5 * ATR
             if support_1 < current_price:

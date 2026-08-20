@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import yfinance as yf
+import math
 import os
+import re
 
 # from datetime import datetime
 from datetime import datetime, timedelta, timezone
@@ -71,6 +73,197 @@ except AttributeError:
 app = Flask(__name__)
 
 app.config.from_object(Config)
+
+# ==================================================
+# CENTRALIZED INPUT VALIDATION HELPERS
+# ==================================================
+
+STOCK_SYMBOL_REGEX = re.compile(r"^[A-Za-z0-9._^+-]{1,20}$")
+
+
+def validate_stock_symbol(symbol: str) -> str:
+    """Validate and normalize stock symbols against strict allowlist."""
+    if not symbol or not isinstance(symbol, str):
+        raise ValueError("Stock symbol must be a non-empty string.")
+    cleaned = symbol.strip().upper()
+    if not STOCK_SYMBOL_REGEX.match(cleaned):
+        raise ValueError(f"Invalid stock symbol format: '{symbol}'.")
+    return cleaned
+
+
+def validate_trade_inputs(quantity_val, price_val, fees_val=0.0):
+    """Validate numeric quantity, price, and fees with strict bounds checking."""
+    try:
+        q = float(quantity_val)
+        if q != q or q == float("inf") or q == float("-inf"):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise ValueError("Quantity must be a valid positive number.")
+    if q < 1 or q > 1_000_000:
+        raise ValueError("Quantity must be between 1 and 1,000,000.")
+
+    try:
+        p = float(price_val)
+        if p != p or p == float("inf") or p == float("-inf"):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise ValueError("Price must be a valid positive number.")
+    if p < 0.01 or p > 10_000_000.0:
+        raise ValueError("Price must be between ₹0.01 and ₹10,000,000.")
+
+    try:
+        f = float(fees_val or 0.0)
+        if f != f or f == float("inf") or f == float("-inf"):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise ValueError("Fees must be a valid non-negative number.")
+    if f < 0.0 or f > 100_000.0:
+        raise ValueError("Fees must be between ₹0 and ₹100,000.")
+
+    return q, p, f
+
+
+# ==================================================
+# CSRF PROTECTION (SESSION TOKEN + DOUBLE-SUBMIT)
+# ==================================================
+
+def get_csrf_token() -> str:
+    """Retrieve or generate a cryptographically secure CSRF token for the session."""
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+@app.context_processor
+def inject_csrf_token():
+    """Expose csrf_token() helper across all Jinja2 templates."""
+    return {"csrf_token": get_csrf_token}
+
+
+@app.before_request
+def validate_csrf():
+    """Validate CSRF tokens on all state-changing HTTP requests."""
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        # Testing bypass only if WTF_CSRF_ENABLED is explicitly False in test harness
+        if app.config.get("TESTING") and app.config.get("WTF_CSRF_ENABLED") is False:
+            return None
+
+        # Google GIS OAuth route has its own ID token and custom CSRF token verification
+        if request.path == "/auth/google":
+            return None
+
+        expected = session.get("csrf_token")
+        if not expected:
+            expected = get_csrf_token()
+
+        submitted = None
+        if request.form and "csrf_token" in request.form:
+            submitted = request.form.get("csrf_token")
+        elif request.is_json and isinstance(request.get_json(silent=True), dict):
+            submitted = request.get_json(silent=True).get("csrf_token")
+
+        if not submitted:
+            submitted = (
+                request.headers.get("X-CSRF-Token")
+                or request.headers.get("X-CSRFToken")
+                or request.headers.get("X-Csrf-Token")
+            )
+
+        if not submitted or not secrets.compare_digest(str(submitted), str(expected)):
+            if request.is_json or request.path.startswith("/api/"):
+                return jsonify({
+                    "success": False,
+                    "message": "CSRF token missing or invalid.",
+                }), 403
+            flash("Your session expired or the CSRF token was invalid. Please try again.", "danger")
+            return redirect(request.referrer or url_for("landing")), 403
+
+
+# ==================================================
+# SECURITY HEADERS & CONTENT SECURITY POLICY (CSP)
+# ==================================================
+
+@app.after_request
+def add_security_headers(response):
+    """Add secure HTTP response headers to every request."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+
+    csp_directives = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.plot.ly https://accounts.google.com",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+        "img-src 'self' data: https:",
+        "connect-src 'self' https://accounts.google.com https://cdn.plot.ly",
+        "frame-src 'self' https://accounts.google.com",
+    ]
+    response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+
+    # Enable HSTS only when operating in HTTPS production
+    if request.is_secure or app.config.get("SESSION_COOKIE_SECURE"):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    return response
+
+
+# ==================================================
+# GLOBAL SAFE ERROR HANDLERS
+# ==================================================
+
+@app.errorhandler(400)
+def handle_bad_request(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Bad request: invalid parameters provided."}), 400
+    return render_template("base.html", custom_error="400 Bad Request - Invalid parameters provided."), 400
+
+
+@app.errorhandler(403)
+def handle_forbidden(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Access forbidden: invalid credentials, CSRF failure, or unauthorized resource access."}), 403
+    return render_template("base.html", custom_error="403 Forbidden - Access denied or invalid CSRF token."), 403
+
+
+@app.errorhandler(404)
+def handle_not_found(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Requested resource not found."}), 404
+    return render_template("base.html", custom_error="404 Not Found - The requested resource could not be found."), 404
+
+
+@app.errorhandler(405)
+def handle_method_not_allowed(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "HTTP method not allowed."}), 405
+    return render_template("base.html", custom_error="405 Method Not Allowed."), 405
+
+
+@app.errorhandler(413)
+def handle_payload_too_large(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Payload too large: request body exceeds maximum allowed 16MB limit."}), 413
+    return render_template("base.html", custom_error="413 Payload Too Large - Request body exceeds limit."), 413
+
+
+@app.errorhandler(429)
+def handle_too_many_requests(e):
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "Too many requests. Please slow down and try again later."}), 429
+    return render_template("base.html", custom_error="429 Too Many Requests - Please try again later."), 429
+
+
+@app.errorhandler(500)
+def handle_server_error(e):
+    app.logger.error(f"Internal server error: {e}")
+    if request.is_json or request.path.startswith("/api/"):
+        return jsonify({"success": False, "message": "An internal server error occurred. Please try again later."}), 500
+    return render_template("base.html", custom_error="500 Internal Server Error - An unexpected error occurred."), 500
+
 
 
 POPULAR_STOCKS = [
@@ -297,10 +490,15 @@ def get_dashboard_stock_snapshot(symbol):
                 change_value = 0.0
 
                 if previous_price:
-                    change_value = round(
-                        ((float(current_price) - float(previous_price)) / float(previous_price)) * 100,
-                        2,
-                    )
+                    try:
+                        c_val = float(current_price)
+                        p_val = float(previous_price)
+                        if p_val > 0 and not math.isnan(c_val) and not math.isnan(p_val):
+                            calc = ((c_val - p_val) / p_val) * 100
+                            if not math.isnan(calc) and not math.isinf(calc):
+                                change_value = round(calc, 2)
+                    except Exception:
+                        change_value = 0.0
 
                 display_symbol = candidate.replace(".NS", "").replace(".BO", "")
                 change_percent = f"{change_value:+.2f}%"
@@ -359,81 +557,103 @@ def get_dashboard_batch_snapshots(symbols):
     if not symbols:
         return []
 
-    unique_symbols = list(dict.fromkeys(symbols))
+    cache_key = "dashboard_market_movers"
 
-    name_lookup = {
-        stock["symbol"]: stock["name"]
-        for stock in POPULAR_STOCKS
-    }
+    def _fetch():
+        unique_symbols = list(dict.fromkeys(symbols))
 
-    snapshots = []
+        name_lookup = {
+            stock["symbol"]: stock["name"]
+            for stock in POPULAR_STOCKS
+        }
 
-    try:
-        data = yf.download(
-            tickers=unique_symbols,
-            period="5d",
-            interval="1d",
-            group_by="ticker",
-            auto_adjust=False,
-            progress=False,
-            threads=True,
-        )
+        snapshots = []
 
-        for symbol in unique_symbols:
-            try:
-                if len(unique_symbols) == 1:
-                    history = data
-                else:
-                    history = data[symbol]
+        try:
+            data = yf.download(
+                tickers=unique_symbols,
+                period="5d",
+                interval="1d",
+                group_by="ticker",
+                auto_adjust=False,
+                progress=False,
+                threads=True,
+            )
 
-                close_prices = history["Close"].dropna()
+            for symbol in unique_symbols:
+                try:
+                    if len(unique_symbols) == 1:
+                        history = data
+                    else:
+                        history = data[symbol]
 
-                if close_prices.empty:
-                    continue
+                    close_prices = history["Close"].dropna()
 
-                current_price = float(close_prices.iloc[-1])
-                previous_price = (
-                    float(close_prices.iloc[-2])
-                    if len(close_prices) >= 2
-                    else current_price
-                )
+                    if close_prices.empty:
+                        continue
 
-                change_value = 0.0
-
-                if previous_price:
-                    change_value = round(
-                        ((current_price - previous_price) / previous_price) * 100,
-                        2,
+                    current_price = float(close_prices.iloc[-1])
+                    previous_price = (
+                        float(close_prices.iloc[-2])
+                        if len(close_prices) >= 2
+                        else current_price
                     )
 
-                if change_value >= 1.5:
-                    signal = "BUY"
-                elif change_value <= -1.5:
-                    signal = "WAIT"
-                else:
-                    signal = "HOLD"
+                    change_value = 0.0
 
-                display_symbol = symbol.replace(".NS", "").replace(".BO", "")
+                    if previous_price and not math.isnan(current_price) and not math.isnan(previous_price) and previous_price > 0:
+                        calc = ((current_price - previous_price) / previous_price) * 100
+                        if not math.isnan(calc) and not math.isinf(calc):
+                            change_value = round(calc, 2)
 
-                snapshots.append(
-                    {
+                    if change_value >= 1.5:
+                        signal = "BUY"
+                    elif change_value <= -1.5:
+                        signal = "WAIT"
+                    else:
+                        signal = "HOLD"
+
+                    display_symbol = symbol.replace(".NS", "").replace(".BO", "")
+
+                    item = {
                         "symbol": display_symbol,
+                        "raw_symbol": symbol,
                         "name": name_lookup.get(symbol, display_symbol),
                         "price": f"{current_price:,.2f}",
+                        "raw_price": current_price,
                         "change_percent": f"{change_value:+.2f}%",
                         "change_value": change_value,
                         "signal": signal,
                         "is_live": True,
                     }
-                )
+                    snapshots.append(item)
 
-            except Exception as error:
-                print(f"Dashboard batch symbol error for {symbol}:", error)
+                    # Populate fast price cache for in-request and portfolio sharing
+                    CacheService.set(
+                        f"price_{symbol}",
+                        (current_price, change_value, (current_price - previous_price)),
+                        ttl_seconds=CacheService.TTL_MARKET_MOVERS
+                    )
 
-    except Exception as error:
-        print("Dashboard batch snapshot error:", error)
+                except Exception as error:
+                    print(f"Dashboard batch symbol error for {symbol}:", error)
 
-    return snapshots
+        except Exception as error:
+            print("Dashboard batch snapshot error:", error)
+
+        return snapshots
+
+    try:
+        return CacheService.get_or_set(
+            cache_key,
+            _fetch,
+            ttl_seconds=CacheService.TTL_MARKET_MOVERS,
+            allow_stale=True
+        ) or []
+    except Exception as e:
+        print("Dashboard batch movers error:", e)
+        stale = CacheService.get(cache_key, allow_stale=True)
+        return stale if stale is not None else []
 
 
 # ==================================================
@@ -467,48 +687,50 @@ def load_user(user_id):
 
 @login_manager.unauthorized_handler
 def unauthorized():
-
     return redirect(url_for("login"))
 
 
 # ==================================================
-# CREATE DATABASE TABLES
+# CREATE DATABASE TABLES & SCHEMA SYNCHRONIZATION
 # ==================================================
 
 with app.app_context():
     db.create_all()
 
-    def ensure_column(table_name, column_name, column_definition):
-        columns = db.session.execute(
-            db.text(f"PRAGMA table_info({table_name})")
-        ).fetchall()
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if "users" in inspector.get_table_names():
+            existing_cols = {col["name"] for col in inspector.get_columns("users")}
 
-        if column_name not in [column[1] for column in columns]:
+            def ensure_column_cross_dialect(column_name, column_definition):
+                if column_name not in existing_cols:
+                    db.session.execute(
+                        db.text(
+                            f"ALTER TABLE users "
+                            f"ADD COLUMN {column_name} {column_definition}"
+                        )
+                    )
+                    db.session.commit()
+                    existing_cols.add(column_name)
+
+            ensure_column_cross_dialect("phone", "VARCHAR(25)")
+            ensure_column_cross_dialect("risk_profile", "VARCHAR(30) DEFAULT 'Moderate' NOT NULL")
+            ensure_column_cross_dialect("investment_goal", "VARCHAR(120)")
+            ensure_column_cross_dialect("preferred_market", "VARCHAR(30) DEFAULT 'NSE' NOT NULL")
+            ensure_column_cross_dialect("google_id", "VARCHAR(255)")
+            ensure_column_cross_dialect("auth_provider", "VARCHAR(30) DEFAULT 'email' NOT NULL")
+
             db.session.execute(
-                db.text(
-                    f"ALTER TABLE {table_name} "
-                    f"ADD COLUMN {column_name} {column_definition}"
-                )
+                db.text("UPDATE users SET auth_provider = 'email' WHERE auth_provider IS NULL OR auth_provider = ''")
             )
             db.session.commit()
-
-    ensure_column("users", "phone", "VARCHAR(25)")
-    ensure_column("users", "risk_profile", "VARCHAR(30) DEFAULT 'Moderate' NOT NULL")
-    ensure_column("users", "investment_goal", "VARCHAR(120)")
-    ensure_column("users", "preferred_market", "VARCHAR(30) DEFAULT 'NSE' NOT NULL")
-    ensure_column("users", "google_id", "VARCHAR(255)")
-    ensure_column("users", "auth_provider", "VARCHAR(30) DEFAULT 'email' NOT NULL")
-    db.session.execute(
-        db.text("UPDATE users SET auth_provider = 'email' WHERE auth_provider IS NULL OR auth_provider = ''")
-    )
-    db.session.execute(
-        db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_id ON users(google_id) WHERE google_id IS NOT NULL")
-    )
-    db.session.commit()
+    except Exception as e:
+        app.logger.warning(f"Schema inspection / migration sync notice: {e}")
+        db.session.rollback()
 
 
 def send_otp_email(recipient, otp):
-
     mail_server = app.config.get("MAIL_SERVER")
     mail_username = app.config.get("MAIL_USERNAME")
     mail_password = app.config.get("MAIL_PASSWORD")
@@ -521,8 +743,6 @@ def send_otp_email(recipient, otp):
 
     message = EmailMessage()
     message["Subject"] = "Your InvestIQ OTP"
-    message["From"] = mail_sender
-    message["To"] = recipient
     message.set_content(
         "Use this OTP to reset your password:\n\n"
         f"{otp}\n\n"
@@ -805,24 +1025,50 @@ def dashboard():
     )[:3]
 
     # 3. Deterministic Scored Recommendations from Active Universe
-    recommended_candidates = [
-        "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
-        "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS"
-    ]
-    scored_pool = []
-    for sym in recommended_candidates:
-        try:
-            snap = get_dashboard_stock_snapshot(sym)
-            if snap and snap.get("is_live"):
-                ai_eval = StockService.get_ai_analysis(sym)
-                snap["signal"] = ai_eval.get("signal", "HOLD")
-                snap["overall_score"] = ai_eval.get("overall", 50)
-                scored_pool.append(snap)
-        except Exception:
-            pass
+    def _fetch_recommendations():
+        recommended_candidates = [
+            "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS",
+            "ICICIBANK.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS"
+        ]
+        # Fast batch snapshot instead of 8 sequential individual network requests
+        snaps = get_dashboard_batch_snapshots(recommended_candidates)
+        pool = []
+        for snap in snaps:
+            sym = snap.get("raw_symbol") or f"{snap.get('symbol')}.NS"
+            cached_ai = CacheService.get(f"ai_analysis_{sym}", allow_stale=True)
+            if cached_ai:
+                snap["signal"] = cached_ai.get("signal", "HOLD")
+                snap["overall_score"] = cached_ai.get("overall", 50)
+            else:
+                change = snap.get("change_value", 0.0)
+                if change >= 1.5:
+                    snap["signal"] = "STRONG BUY"
+                    snap["overall_score"] = 85
+                elif change >= 0.3:
+                    snap["signal"] = "BUY"
+                    snap["overall_score"] = 72
+                elif change <= -1.5:
+                    snap["signal"] = "REDUCE"
+                    snap["overall_score"] = 45
+                else:
+                    snap["signal"] = "HOLD"
+                    snap["overall_score"] = 60
+            pool.append(snap)
 
-    scored_pool.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
-    recommended_stocks = scored_pool[:4]
+        pool.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
+        return pool[:4]
+
+    try:
+        recommended_stocks = CacheService.get_or_set(
+            "dashboard_recommended_stocks",
+            _fetch_recommendations,
+            ttl_seconds=CacheService.TTL_RECOMMENDATIONS,
+            allow_stale=True
+        ) or []
+    except Exception as e:
+        print("Dashboard recommendations error:", e)
+        stale_rec = CacheService.get("dashboard_recommended_stocks", allow_stale=True)
+        recommended_stocks = stale_rec if stale_rec is not None else []
 
     # 4. Live Market News
     market_news = NewsService.get_market_news()
@@ -966,6 +1212,25 @@ def portfolio():
     )
 
 
+@app.route("/api/health/db", methods=["GET"])
+def api_db_health():
+    """Lightweight database connectivity check executing trivial SELECT 1."""
+    try:
+        db.session.execute(db.text("SELECT 1"))
+        return jsonify({
+            "status": "healthy",
+            "database": "connected",
+            "dialect": db.engine.dialect.name,
+        }), 200
+    except Exception as error:
+        app.logger.error(f"Database health check failure: {error}")
+        return jsonify({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "message": "Database connectivity check failed.",
+        }), 503
+
+
 @app.route("/api/portfolio/summary")
 @login_required
 def api_portfolio_summary():
@@ -978,18 +1243,15 @@ def api_portfolio_summary():
 @login_required
 def api_portfolio_buy():
     data = request.get_json(silent=True) or request.form
-    symbol = (data.get("symbol") or "").strip()
     try:
-        qty = float(data.get("quantity", 0))
-        price = float(data.get("price", 0))
-        fees = float(data.get("fees", 0.0) or 0.0)
-        notes = (data.get("notes") or "").strip()
-
-        if not symbol or qty <= 0 or price <= 0:
-            return jsonify({
-                "success": False,
-                "message": "Please provide a valid stock symbol, positive quantity, and purchase price.",
-            }), 400
+        raw_symbol = data.get("symbol")
+        symbol = validate_stock_symbol(raw_symbol)
+        qty, price, fees = validate_trade_inputs(
+            data.get("quantity"),
+            data.get("price"),
+            data.get("fees", 0.0),
+        )
+        notes = (data.get("notes") or "").strip()[:500]
 
         user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
         holding, txn = PortfolioService.record_buy(
@@ -1012,7 +1274,10 @@ def api_portfolio_buy():
                 "avg_price": holding.average_buy_price,
             },
         })
+    except ValueError as ve:
+        return jsonify({"success": False, "message": str(ve)}), 400
     except Exception as error:
+        app.logger.error(f"Portfolio buy error: {error}")
         return jsonify({"success": False, "message": str(error)}), 400
 
 
@@ -1020,18 +1285,15 @@ def api_portfolio_buy():
 @login_required
 def api_portfolio_sell():
     data = request.get_json(silent=True) or request.form
-    symbol = (data.get("symbol") or "").strip()
     try:
-        qty = float(data.get("quantity", 0))
-        price = float(data.get("price", 0))
-        fees = float(data.get("fees", 0.0) or 0.0)
-        notes = (data.get("notes") or "").strip()
-
-        if not symbol or qty <= 0 or price <= 0:
-            return jsonify({
-                "success": False,
-                "message": "Please provide a valid stock symbol, positive quantity, and selling price.",
-            }), 400
+        raw_symbol = data.get("symbol")
+        symbol = validate_stock_symbol(raw_symbol)
+        qty, price, fees = validate_trade_inputs(
+            data.get("quantity"),
+            data.get("price"),
+            data.get("fees", 0.0),
+        )
+        notes = (data.get("notes") or "").strip()[:500]
 
         user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
         holding, txn = PortfolioService.record_sell(
@@ -1051,11 +1313,15 @@ def api_portfolio_sell():
             "realized_pnl": txn.realized_pnl,
             "remaining_qty": holding.quantity if holding else 0.0,
         })
+    except ValueError as ve:
+        return jsonify({"success": False, "message": str(ve)}), 400
     except Exception as error:
+        app.logger.error(f"Portfolio sell error: {error}")
         return jsonify({"success": False, "message": str(error)}), 400
 
 
 @app.route("/api/portfolio/analyze-ai", methods=["POST"])
+@app.route("/api/portfolio/ai-analysis", methods=["POST"])
 @login_required
 def api_portfolio_analyze_ai():
     user_portfolio = PortfolioService.get_or_create_portfolio(current_user.id)
@@ -1115,12 +1381,18 @@ def api_portfolio_delete_holding(holding_id):
 @login_required
 def ask_ai():
     payload = request.get_json(silent=True) or {}
-    question = (payload.get("question") or payload.get("message") or "").strip()
-
-    if not question:
+    raw_question = payload.get("question") or payload.get("message")
+    if not raw_question or not isinstance(raw_question, str) or not raw_question.strip():
         return jsonify({
             "success": False,
             "message": "Please enter a stock or portfolio question.",
+        }), 400
+
+    question = raw_question.strip()
+    if len(question) > 1000:
+        return jsonify({
+            "success": False,
+            "message": "Question is too long (maximum 1,000 characters allowed).",
         }), 400
 
     detected_symbol = detect_stock_from_question(question)
@@ -1569,21 +1841,17 @@ def watchlist():
 @app.route("/watchlist/add", methods=["POST"])
 @login_required
 def add_to_watchlist():
-
     data = request.get_json(silent=True) or request.form or {}
-
-    symbol = data.get("symbol", "").strip().upper()
-
-    if not symbol:
-        return jsonify({"success": False, "message": "Invalid symbol"}), 400
+    try:
+        symbol = validate_stock_symbol(data.get("symbol"))
+    except ValueError as ve:
+        return jsonify({"success": False, "message": str(ve)}), 400
 
     exists = Watchlist.query.filter_by(user_id=current_user.id, symbol=symbol).first()
-
     if exists:
         return jsonify({"success": False, "message": "Already added"})
 
     stock = Watchlist(user_id=current_user.id, symbol=symbol)
-
     try:
         db.session.add(stock)
         db.session.commit()
@@ -1597,15 +1865,14 @@ def add_to_watchlist():
 @app.route("/watchlist/remove", methods=["POST"])
 @login_required
 def remove_from_watchlist():
-
     data = request.get_json(silent=True) or request.form or {}
-
-    symbol = data.get("symbol", "").strip().upper()
+    try:
+        symbol = validate_stock_symbol(data.get("symbol"))
+    except ValueError as ve:
+        return jsonify({"success": False, "message": str(ve)}), 400
 
     stock = Watchlist.query.filter_by(user_id=current_user.id, symbol=symbol).first()
-
     if stock:
-
         db.session.delete(stock)
         db.session.commit()
 

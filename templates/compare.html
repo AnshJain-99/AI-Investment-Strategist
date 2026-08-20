@@ -1038,16 +1038,15 @@ Compare Stocks
         }
 
 
+        if (window.showTradingOverlay) {
+            window.showTradingOverlay(null, 'Comparing Selected Stocks...');
+        }
+
         window.location.href =
-
             `/compare-results?symbols=${
-
                 encodeURIComponent(
-
                     symbols.join(",")
-
                 )
-
             }`;
 
     }
@@ -1056,24 +1055,18 @@ Compare Stocks
     /* POPULAR COMPARISON */
 
     function openPopularComparison(
-
         firstStock,
-
         secondStock
-
     ) {
-
+        if (window.showTradingOverlay) {
+            window.showTradingOverlay(null, `Comparing ${firstStock} vs ${secondStock}...`);
+        }
 
         window.location.href =
-
             `/compare-results?symbols=${
-
                 firstStock
-
             },${
-
                 secondStock
-
             }`;
 
     }

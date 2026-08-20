@@ -10,13 +10,13 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(25), nullable=True)
     risk_profile = db.Column(db.String(30), nullable=False, default="Moderate")
     investment_goal = db.Column(db.String(120), nullable=True)
     preferred_market = db.Column(db.String(30), nullable=False, default="NSE")
-    google_id = db.Column(db.String(255), unique=True, nullable=True)
+    google_id = db.Column(db.String(255), unique=True, nullable=True, index=True)
     auth_provider = db.Column(db.String(30), nullable=False, default="email")
 
     # Relationships
@@ -54,11 +54,13 @@ class Watchlist(db.Model):
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
     symbol = db.Column(
         db.String(20),
-        nullable=False
+        nullable=False,
+        index=True
     )
     created_at = db.Column(
         db.DateTime,
@@ -73,7 +75,8 @@ class Portfolio(db.Model):
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
     name = db.Column(db.String(100), nullable=False, default="Primary Portfolio")
     currency = db.Column(db.String(10), nullable=False, default="INR")
@@ -121,9 +124,10 @@ class Holding(db.Model):
     portfolio_id = db.Column(
         db.Integer,
         db.ForeignKey("portfolios.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
-    symbol = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(20), nullable=False, index=True)
     stock_name = db.Column(db.String(150), nullable=False)
     quantity = db.Column(db.Float, nullable=False, default=0.0)
     average_buy_price = db.Column(db.Float, nullable=False, default=0.0)
@@ -142,14 +146,16 @@ class Transaction(db.Model):
     portfolio_id = db.Column(
         db.Integer,
         db.ForeignKey("portfolios.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
-    symbol = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(20), nullable=False, index=True)
     stock_name = db.Column(db.String(150), nullable=False)
     transaction_type = db.Column(db.String(10), nullable=False)  # BUY or SELL
     quantity = db.Column(db.Float, nullable=False)
@@ -158,7 +164,7 @@ class Transaction(db.Model):
     fees = db.Column(db.Float, nullable=False, default=0.0)
     realized_pnl = db.Column(db.Float, nullable=True, default=0.0)
     notes = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
 
 class PortfolioSnapshot(db.Model):
@@ -168,12 +174,13 @@ class PortfolioSnapshot(db.Model):
     portfolio_id = db.Column(
         db.Integer,
         db.ForeignKey("portfolios.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
     total_value = db.Column(db.Float, nullable=False, default=0.0)
     total_invested = db.Column(db.Float, nullable=False, default=0.0)
     total_pnl = db.Column(db.Float, nullable=False, default=0.0)
-    snapshot_date = db.Column(db.Date, nullable=False)
+    snapshot_date = db.Column(db.Date, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -184,12 +191,13 @@ class StockAlert(db.Model):
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
-    symbol = db.Column(db.String(20), nullable=False)
+    symbol = db.Column(db.String(20), nullable=False, index=True)
     alert_type = db.Column(db.String(30), nullable=False)  # PRICE_ABOVE, PRICE_BELOW, RSI_OVERSOLD, RSI_OVERBOUGHT, SIGNAL_CHANGE
     target_value = db.Column(db.Float, nullable=True)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_triggered = db.Column(db.Boolean, default=False, nullable=False)
     triggered_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -199,7 +207,7 @@ class AIAnalysisCache(db.Model):
     __tablename__ = "ai_analysis_cache"
 
     id = db.Column(db.Integer, primary_key=True)
-    symbol = db.Column(db.String(20), unique=True, nullable=False)
+    symbol = db.Column(db.String(20), unique=True, nullable=False, index=True)
     overall_score = db.Column(db.Integer, nullable=False)
     fundamental_score = db.Column(db.Integer, nullable=False)
     technical_score = db.Column(db.Integer, nullable=False)
@@ -213,4 +221,4 @@ class AIAnalysisCache(db.Model):
     stop_loss = db.Column(db.Float, nullable=True)
     summary_json = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True, index=True)

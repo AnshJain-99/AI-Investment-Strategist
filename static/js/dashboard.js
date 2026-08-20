@@ -48,6 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
         button.classList.add("active", "loading");
         marketChart.classList.add("is-loading");
 
+        if (window.getTradingSpinnerHTML) {
+            marketChart.innerHTML = window.getTradingSpinnerHTML({
+                size: 'md',
+                text: `Loading ${label || 'Live'} Market Chart`,
+                subtext: 'Syncing NIFTY 50 and SENSEX data...'
+            });
+        }
+
         try {
             const response = await fetch(
                 `/api/dashboard-market-chart?period=${encodeURIComponent(period)}`
@@ -109,15 +117,24 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const icon =
-            state === "loading"
-                ? "bi-arrow-repeat"
-                : state === "error"
-                    ? "bi-exclamation-triangle"
-                    : "bi-lightning-charge";
-
         const chatMessage = document.createElement("div");
         chatMessage.className = `chat-message ${type} ${state}`;
+
+        if (state === "loading" && window.getTradingSpinnerHTML) {
+            chatMessage.innerHTML = window.getTradingSpinnerHTML({
+                size: 'sm',
+                text: 'InvestIQ is analyzing market context...',
+                centered: false
+            });
+            askAiAnswer.append(chatMessage);
+            askAiAnswer.scrollTop = askAiAnswer.scrollHeight;
+            return chatMessage;
+        }
+
+        const icon =
+            state === "error"
+                ? "bi-exclamation-triangle"
+                : "bi-lightning-charge";
 
         if (type === "bot") {
             const iconElement = document.createElement("i");

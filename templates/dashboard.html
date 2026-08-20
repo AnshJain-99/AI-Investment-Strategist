@@ -129,9 +129,21 @@
             {{ market_chart | safe }}
             {% else %}
             <div class="chart-placeholder chart-loading-state">
-                <i class="bi bi-arrow-repeat"></i>
-                <h5>Loading live market chart</h5>
-                <p>NIFTY 50 and SENSEX data is syncing from yfinance.</p>
+                <div class="trading-spinner-container">
+                    <div class="trading-spinner">
+                        <div class="trading-spinner-ring"></div>
+                        <div class="trading-spinner-bars">
+                            <div class="candlestick c1"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c2"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c3"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c4"><div class="wick"></div><div class="body"></div></div>
+                            <div class="candlestick c5"><div class="wick"></div><div class="body"></div></div>
+                        </div>
+                        <div class="trading-spinner-glow"></div>
+                    </div>
+                    <div class="trading-spinner-label">Loading Live Market Chart</div>
+                    <div class="trading-spinner-subtext">NIFTY 50 and SENSEX data is syncing from market feeds</div>
+                </div>
             </div>
             {% endif %}
         </div>

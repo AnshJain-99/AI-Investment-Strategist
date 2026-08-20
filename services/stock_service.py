@@ -11,6 +11,7 @@ from services.fundamental_service import FundamentalService
 from services.target_service import TargetService
 from services.scoring_service import ScoringEngine
 from services.news_service import NewsService
+from services.llm_service import LLMService
 
 
 YFINANCE_CACHE_DIR = os.path.join(
@@ -34,11 +35,9 @@ class StockService:
 
     @staticmethod
     def get_market_data():
-        cached = CacheService.get("market_data_indices")
-        if cached:
-            return cached
+        cache_key = "market_data_indices"
 
-        try:
+        def _fetch():
             nifty = yf.Ticker("^NSEI")
             sensex = yf.Ticker("^BSESN")
 
@@ -50,12 +49,22 @@ class StockService:
                 "sensex": f"{sensex_price:,.2f}" if sensex_price else "--",
                 "status": "Live",
             }
-            if nifty_price and sensex_price:
-                CacheService.set("market_data_indices", res, ttl_seconds=30)
             return res
 
+        try:
+            return CacheService.get_or_set(
+                cache_key,
+                _fetch,
+                ttl_seconds=CacheService.TTL_MARKET_INDICES,
+                allow_stale=True
+            ) or {"nifty": "--", "sensex": "--", "status": "Offline"}
         except Exception as e:
             print("Market Data Error:", e)
+            stale = CacheService.get(cache_key, allow_stale=True)
+            if stale:
+                stale_copy = dict(stale)
+                stale_copy["status"] = "Cached"
+                return stale_copy
             return {"nifty": "--", "sensex": "--", "status": "Offline"}
 
     # ==================================================
@@ -67,15 +76,13 @@ class StockService:
         if not symbol:
             return None
 
-        clean_symbol = symbol.strip().upper()
-        if "." not in clean_symbol and not clean_symbol.startswith("^"):
-            clean_symbol = f"{clean_symbol}.NS"
+        clean_symbol = CacheService.normalize_symbol(symbol)
+        if not clean_symbol:
+            return None
 
-        cached = CacheService.get(f"stock_details_{clean_symbol}")
-        if cached:
-            return cached
+        cache_key = f"stock_details_{clean_symbol}"
 
-        try:
+        def _fetch():
             ticker = yf.Ticker(clean_symbol)
 
             try:
@@ -119,11 +126,13 @@ class StockService:
                 if len(history) >= 2:
                     latest = float(history["Close"].iloc[-1])
                     previous = float(history["Close"].iloc[-2])
-                    change = latest - previous
-                    percent = (change / previous) * 100
-                    price_change = f"{percent:+.2f}%"
-                    price_change_value = round(percent, 2)
-                    price_change_color = "green" if percent > 0 else "red" if percent < 0 else "gray"
+                    if previous > 0 and not math.isnan(latest) and not math.isnan(previous):
+                        change = latest - previous
+                        percent = (change / previous) * 100
+                        if not math.isnan(percent) and not math.isinf(percent):
+                            price_change = f"{percent:+.2f}%"
+                            price_change_value = round(percent, 2)
+                            price_change_color = "green" if percent > 0 else "red" if percent < 0 else "gray"
             except Exception:
                 pass
 
@@ -160,10 +169,27 @@ class StockService:
                 "raw_info": info
             }
 
+            # Pre-populate price cache for portfolio service
             if price_value is not None:
-                CacheService.set(f"stock_details_{clean_symbol}", res, ttl_seconds=60)
+                CacheService.set(
+                    f"price_{clean_symbol}",
+                    (float(price_value), float(price_change_value), float(price_value * (price_change_value / 100.0))),
+                    ttl_seconds=CacheService.TTL_STOCK_DETAILS
+                )
 
             return res
+
+        try:
+            return CacheService.get_or_set(
+                cache_key,
+                _fetch,
+                ttl_seconds=CacheService.TTL_STOCK_DETAILS,
+                allow_stale=True
+            )
+        except Exception as e:
+            print(f"Stock details fetch error for {clean_symbol}:", e)
+            stale = CacheService.get(cache_key, allow_stale=True)
+            return stale
 
         except Exception as e:
             print("Stock Details Error:", e)
@@ -369,15 +395,13 @@ class StockService:
         if not symbol:
             return fallback_analysis()
 
-        clean_symbol = symbol.strip().upper()
-        if "." not in clean_symbol and not clean_symbol.startswith("^"):
-            clean_symbol = f"{clean_symbol}.NS"
+        clean_symbol = CacheService.normalize_symbol(symbol)
+        if not clean_symbol:
+            return fallback_analysis()
 
-        cached = CacheService.get(f"ai_analysis_{clean_symbol}")
-        if cached:
-            return cached
+        cache_key = f"ai_analysis_{clean_symbol}"
 
-        try:
+        def _fetch():
             ticker = yf.Ticker(clean_symbol)
             try:
                 info = ticker.info or {}
@@ -414,7 +438,59 @@ class StockService:
             stop_val = target_data.get("stop_loss") if target_data.get("available") else "N/A"
             time_horizon = target_data.get("time_horizon", "6-12 Months")
 
+            # 6. Qualitative AI Explanation (Controlled as TEXT ONLY; cannot modify backend numbers)
+            stock_meta_brief = {
+                "name": info.get("longName") or info.get("shortName") or clean_symbol,
+                "price": current_price,
+                "pe": fundamentals_data.get("trailing_pe"),
+                "roe": fundamentals_data.get("roe"),
+                "sector": info.get("sector", "N/A"),
+                "industry": info.get("industry", "N/A"),
+            }
+            ai_explanation_text = LLMService.generate_stock_explanation(
+                symbol=clean_symbol,
+                stock_details=stock_meta_brief,
+                evaluation=evaluation,
+                target_data=target_data
+            )
+
             res = {
+                # New Structured Semantic Architecture (Backend Authority)
+                "raw_metrics": {
+                    "trailing_pe": fundamentals_data.get("trailing_pe"),
+                    "forward_pe": fundamentals_data.get("forward_pe"),
+                    "peg_ratio": fundamentals_data.get("peg_ratio"),
+                    "price_to_book": fundamentals_data.get("price_to_book"),
+                    "price_to_sales": fundamentals_data.get("price_to_sales"),
+                    "ev_to_ebitda": fundamentals_data.get("ev_to_ebitda"),
+                    "roe": fundamentals_data.get("roe"),
+                    "roa": fundamentals_data.get("roa"),
+                    "profit_margin": fundamentals_data.get("profit_margin"),
+                    "operating_margin": fundamentals_data.get("operating_margin"),
+                    "revenue_growth": fundamentals_data.get("revenue_growth"),
+                    "earnings_growth": fundamentals_data.get("earnings_growth"),
+                    "debt_to_equity": fundamentals_data.get("debt_to_equity"),
+                    "current_ratio": fundamentals_data.get("current_ratio"),
+                    "free_cash_flow": fundamentals_data.get("free_cash_flow"),
+                    "rsi": technicals_data.get("rsi"),
+                    "macd_signal": technicals_data.get("macd_signal"),
+                    "trend": technicals_data.get("trend"),
+                    "annualized_volatility": technicals_data.get("risk_metrics", {}).get("annualized_volatility"),
+                },
+                "factor_scores": evaluation["factor_scores"],
+                "composite_score": evaluation["overall_score"],
+                "recommendation": evaluation["signal"].upper() if evaluation["signal"] in ["Buy", "Hold", "Sell", "Strong Buy"] else evaluation["signal"],
+                "risk_level": evaluation["risk_label"],
+                "confidence": evaluation["confidence"],
+                "data_quality": evaluation.get("data_quality", 80),
+                "missing_metrics": evaluation.get("missing_metrics", []),
+                "target": target_val,
+                "stop_loss": stop_val,
+                "risk_reward": target_data.get("risk_reward_ratio", "N/A"),
+                "time_horizon": time_horizon,
+                "ai_explanation": ai_explanation_text,
+
+                # Legacy Backward-Compatible Fields (Guaranteed Unbroken)
                 "overall": evaluation["overall_score"],
                 "fundamental": evaluation["factor_scores"]["fundamentals"],
                 "technical": evaluation["factor_scores"]["technicals"],
@@ -424,24 +500,28 @@ class StockService:
                 "risk_score": evaluation["factor_scores"]["risk"],
                 "signal": evaluation["signal"].upper() if evaluation["signal"] in ["Buy", "Hold", "Sell", "Strong Buy"] else evaluation["signal"],
                 "raw_signal": evaluation["signal"],
-                "confidence": evaluation["confidence"],
                 "risk": evaluation["risk_label"],
                 "summary": evaluation["summary"],
                 "strengths": evaluation["strengths"],
                 "risks": evaluation["risks"],
-                "target": target_val,
-                "stop_loss": stop_val,
-                "risk_reward": target_data.get("risk_reward_ratio", "N/A"),
-                "time_horizon": time_horizon,
                 "technicals_detail": technicals_data,
                 "fundamentals_detail": fundamentals_data,
+                "factor_details": evaluation.get("factor_details", {}),
             }
-
-            CacheService.set(f"ai_analysis_{clean_symbol}", res, ttl_seconds=300) # 5 min cache
             return res
 
+        try:
+            return CacheService.get_or_set(
+                cache_key,
+                _fetch,
+                ttl_seconds=CacheService.TTL_AI_ANALYSIS,
+                allow_stale=True
+            )
         except Exception as e:
             print(f"AI Analysis Error for {symbol}:", e)
+            stale = CacheService.get(cache_key, allow_stale=True)
+            if stale is not None:
+                return stale
             return fallback_analysis()
 
     # ==================================================
@@ -512,6 +592,30 @@ class StockService:
 
 def fallback_analysis():
     return {
+        # Structured Semantic Fields
+        "raw_metrics": {},
+        "factor_scores": {
+            "fundamentals": 50,
+            "technicals": 50,
+            "valuation": 50,
+            "momentum": 50,
+            "sentiment": 50,
+            "risk": 50,
+            "liquidity": 50,
+        },
+        "composite_score": 50,
+        "recommendation": "HOLD",
+        "risk_level": "Moderate Risk",
+        "confidence": 50,
+        "data_quality": 50,
+        "missing_metrics": ["live_data_feed"],
+        "target": "N/A",
+        "stop_loss": "N/A",
+        "risk_reward": "N/A",
+        "time_horizon": "Data pending",
+        "ai_explanation": "Live AI analysis is limited because complete market data is unavailable right now. Keep this stock on watch and refresh after live data updates.",
+
+        # Legacy Backward-Compatible Fields
         "overall": 50,
         "fundamental": 50,
         "technical": 50,
@@ -521,15 +625,13 @@ def fallback_analysis():
         "risk_score": 50,
         "signal": "HOLD",
         "raw_signal": "Hold",
-        "confidence": 50,
         "risk": "Moderate Risk",
         "summary": "Live AI analysis is limited because complete market data is unavailable right now. Keep this stock on watch and refresh after live data updates.",
         "strengths": ["Stock remains trackable with active listing"],
         "risks": ["Incomplete live feeds - awaiting confirmation"],
-        "target": "N/A",
-        "stop_loss": "N/A",
-        "risk_reward": "N/A",
-        "time_horizon": "Data pending",
+        "technicals_detail": {"available": False},
+        "fundamentals_detail": {},
+        "factor_details": {},
     }
 
 

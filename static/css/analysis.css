@@ -1,1252 +1,915 @@
-/* ======================================================
-   ANALYSIS PAGE
-====================================================== */
-
-.analysis-page{
-    display:flex;
-    flex-direction:column;
-    gap:24px;
-}
-
-/* ======================================================
-   HERO SECTION
-====================================================== */
-
-.analysis-hero{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:30px;
-    background:#ffffff;
-    border:1px solid #e8ebf2;
-    border-radius:24px;
-    padding:32px;
-    box-shadow:0 8px 30px rgba(15,23,42,.05);
-}
-
-.hero-left{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-}
-
-.hero-label{
-    display:inline-flex;
-    align-items:center;
-    width:max-content;
-    padding:8px 14px;
-    border-radius:30px;
-    background:#f3f0ff;
-    color:#7c3aed;
-    font-size:13px;
-    font-weight:600;
-}
-
-.hero-left h1{
-    margin:0;
-    font-size:40px;
-    font-weight:700;
-    color:#111827;
-}
-
-.hero-symbol{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    color:#6b7280;
-    font-size:15px;
-}
-
-.hero-right{
-    min-width:320px;
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-    align-items:flex-end;
-}
-
-.hero-price{
-    font-size:42px;
-    font-weight:700;
-    color:#111827;
-}
-
-.hero-change{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:16px;
-    font-weight:600;
-}
-
-.hero-change.positive{
-    color:#16a34a;
-}
-
-.hero-change.negative{
-    color:#dc2626;
-}
-
-.hero-grid{
-    width:100%;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
-}
-
-.hero-item{
-    background:#f8fafc;
-    border-radius:16px;
-    padding:16px;
-    text-align:center;
-}
-
-.hero-item span{
-    display:block;
-    color:#6b7280;
-    font-size:13px;
-    margin-bottom:6px;
-}
-
-.hero-item strong{
-    font-size:18px;
-    color:#111827;
-}
-
-
-.hero-live{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color:#16a34a;
-    font-size:14px;
-    font-weight:600;
-}
-
-.live-dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-    background:#22c55e;
-    animation:pulse 1.5s infinite;
-}
-
-@keyframes pulse{
-    0%{
-        transform:scale(.9);
-        opacity:.7;
-    }
-    70%{
-        transform:scale(1.3);
-        opacity:0;
-    }
-    100%{
-        transform:scale(.9);
-        opacity:.7;
-    }
-}
-
-/* ======================================================
-   AI SCORE GRID
-====================================================== */
-
-.analysis-score-grid{
-    display:grid;
-    grid-template-columns:2fr 1fr 1fr 1fr;
-    gap:20px;
-}
-
-.analysis-ai-card,
-.overall-score-card,
-.mini-score-card{
-    background:#fff;
-    border:1px solid #e9edf5;
-    border-radius:22px;
-    padding:24px;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-}
-
-.analysis-ai-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:18px;
-}
-
-.analysis-ai-header span{
-    font-size:15px;
-    font-weight:600;
-}
-
-.analysis-ai-header i{
-    font-size:22px;
-    color:#7c3aed;
-}
-
-.buy-signal{
-    color:#16a34a;
-}
-
-.sell-signal{
-    color:#dc2626;
-}
-
-.hold-signal{
-    color:#ca8a04;
-}
-
-.analysis-ai-card h2{
-    font-size:34px;
-    font-weight:700;
-    margin-bottom:14px;
-}
-
-/* Keep BUY / HOLD / SELL as plain text, without a full-width color strip. */
-.analysis-ai-card h2.buy-signal,
-.analysis-ai-card h2.hold-signal,
-.analysis-ai-card h2.sell-signal{
-    display:inline-block;
-    width:max-content;
-    padding:0;
-    background:transparent;
-}
-
-.analysis-ai-card p{
-    color:#6b7280;
-    margin-bottom:18px;
-}
-
-.recommendation-desc{
-    color:#64748b;
-    font-size:14px;
-    line-height:1.7;
-    margin-bottom:20px;
-}
-
-/* ======================================================
-   CONFIDENCE BAR
-====================================================== */
-
-.confidence-progress{
-    width:100%;
-    height:10px;
-    border-radius:999px;
-    background:#eceef6;
-    overflow:hidden;
-    margin:18px 0;
-}
-
-.confidence-fill{
-    width:0;
-    height:100%;
-    border-radius:999px;
-    background:linear-gradient(90deg,#7c3aed,#8b5cf6);
-    transition:1.2s;
-}
-
-.analysis-update{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color:#6b7280;
-    font-size:13px;
-}
-
-/* ======================================================
-   OVERALL SCORE
-====================================================== */
-
-.overall-score-card{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-}
-
-.overall-score-circle{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    background:linear-gradient(135deg,#7c3aed,#a855f7);
-    color:#fff;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:34px;
-    font-weight:700;
-    margin:18px 0;
-}
-
-.score-description{
-    margin-top:14px;
-    color:#64748b;
-    font-size:14px;
-}
-
-.score-footer{
-    margin-top:18px;
-    font-size:12px;
-    color:#9ca3af;
-}
-
-/* ======================================================
-   MINI SCORE CARD
-====================================================== */
-
-.mini-score-card span{
-    display:block;
-    color:#6b7280;
-    font-size:14px;
-    margin-bottom:10px;
-}
-
-.mini-score-card strong{
-    font-size:32px;
-    color:#111827;
-}
-
-.metric-info{
-    margin:14px 0;
-    color:#64748b;
-    font-size:13px;
-    line-height:1.6;
-}
-
-.mini-progress{
-    width:100%;
-    height:8px;
-    background:#eceef6;
-    border-radius:999px;
-    overflow:hidden;
-}
-
-.mini-progress-fill{
-    width:0;
-    height:100%;
-    background:linear-gradient(90deg,#22c55e,#16a34a);
-    border-radius:999px;
-    transition:1.2s;
-}
-
-/* ======================================================
-   INFO CARDS
-====================================================== */
-
-.analysis-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:18px;
-}
-
-.info-card{
-    background:#fff;
-    border:1px solid #edf0f6;
-    border-radius:18px;
-    padding:22px;
-    transition:.25s;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-}
-
-.info-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 18px 35px rgba(124,58,237,.08);
-}
-
-.info-card h5{
-    margin-bottom:12px;
-    color:#6b7280;
-    font-size:13px;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:.4px;
-}
-
-.info-card p{
-    margin:0;
-    font-size:22px;
-    font-weight:700;
-    color:#111827;
-    word-break:break-word;
-}
-/* ======================================================
-   ANALYSIS LAYOUT
-====================================================== */
-
-.analysis-layout{
-    display:grid;
-    grid-template-columns:minmax(0,2fr) minmax(320px,1fr);
-    gap:24px;
-    align-items:start;
-    margin-top:28px;
-}
-
-.analysis-left{
-    min-width:0;
-}
-
-.analysis-right{
-    min-width:0;
-}
-
-.below-chart-grid{
-    display:grid;
-    grid-template-columns:320px 1fr;
-    gap:24px;
-    margin-top:24px;
-    align-items:stretch;
-}
-
-/* ======================================================
-   CHART CARD
-====================================================== */
-
-.chart-card{
-    background:#fff;
-    border:1px solid #e9edf5;
-    border-radius:22px;
-    padding:24px;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-}
-
-.chart-card h4{
-    margin-bottom:20px;
-    font-size:20px;
-    font-weight:600;
-    color:#111827;
-}
-
-.chart-placeholder{
-    height:420px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:2px dashed #dbe1ea;
-    border-radius:18px;
-    color:#94a3b8;
-    font-size:15px;
-}
-
-/* ======================================================
-   COMPANY CARD
-====================================================== */
-
-.company-card{
-    background:#fff;
-    border:1px solid #e9edf5;
-    border-radius:22px;
-    padding:22px;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-    align-self:start;
-    height:fit-content;
-}
-
-.company-card h4{
-    margin-bottom:18px;
-    font-size:18px;
-}
-
-.company-card a{
-    word-break:break-word;
-    color:#7c3aed;
-    font-weight:600;
-}
-
-/* =====================================================
-   ANALYSIS PAGE POLISH + MOTION
-===================================================== */
-
-.analysis-page{
-    width:min(1440px, 100%);
-    margin:0 auto;
-    padding:28px 0 48px;
-    gap:22px;
-}
-
-.analysis-hero{
-    min-height:260px;
-    padding:32px 36px;
-    background:linear-gradient(135deg, #ffffff 0%, #fbfaff 100%);
-}
-
-.hero-right{
-    min-width:min(100%, 450px);
-}
-
-.hero-item{
-    min-height:86px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    border:1px solid #f1f5f9;
-    transition:transform .22s ease, box-shadow .22s ease;
-}
-
-.hero-item:hover{
-    transform:translateY(-3px);
-    box-shadow:0 12px 22px rgba(124, 58, 237, .10);
-}
-
-.analysis-score-grid{
-    grid-template-columns:minmax(280px, 1.45fr) minmax(200px, .8fr) repeat(2, minmax(190px, .75fr));
-    align-items:stretch;
-}
-
-.analysis-ai-card,
-.overall-score-card,
-.mini-score-card{
-    min-height:278px;
-}
-
-.analysis-ai-card{
-    display:flex;
-    flex-direction:column;
-}
-
-.recommendation-desc{
-    margin-bottom:0;
-}
-
-.analysis-ai-card .confidence-progress{
-    margin-top:auto;
-}
-
-.overall-score-circle{
-    box-shadow:0 14px 28px rgba(124, 58, 237, .24);
-}
-
-.analysis-grid{
-    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
-    gap:14px;
-}
-
-.info-card{
-    min-height:122px;
-    padding:18px 20px;
-}
-
-.info-card p{
-    font-size:20px;
-    line-height:1.3;
-}
-
-.analysis-layout{
-    grid-template-columns:minmax(0, 1fr) minmax(300px, 360px);
-    gap:22px;
-}
-
-.chart-card{
-    padding:22px;
-}
-
-.below-chart-grid{
-    grid-template-columns:minmax(190px, 240px) minmax(0, 1fr);
-    gap:18px;
-    align-items:start;
-}
-
-.company-card{
-    position:sticky;
-    top:24px;
-    padding:20px;
-}
-
-.company-card h4{
-    margin-bottom:12px;
-}
-
-.company-card a{
-    display:inline-block;
-    max-width:100%;
-    padding:8px 10px;
-    background:#f5f3ff;
-    border-radius:10px;
-    font-size:13px;
-    line-height:1.45;
-}
-
-.recommendation-card{
-    gap:18px;
-}
-
-.latest-news-card{
-    min-height:480px;
-    height:calc(100vh - 180px);
-    max-height:700px;
-    position:sticky;
-    top:24px;
-}
-
-.analysis-page > *,
-.analysis-layout > *,
-.below-chart-grid > *{
-    animation:analysisReveal .52s both cubic-bezier(.22, .8, .3, 1);
-}
-
-.analysis-page > :nth-child(2){ animation-delay:.05s; }
-.analysis-page > :nth-child(3){ animation-delay:.10s; }
-.analysis-page > :nth-child(4){ animation-delay:.15s; }
-.analysis-layout > :nth-child(2){ animation-delay:.18s; }
-
-@keyframes analysisReveal{
-    from{ opacity:0; transform:translateY(14px); }
-    to{ opacity:1; transform:translateY(0); }
-}
-
-@media (prefers-reduced-motion: no-preference){
-    .overall-score-circle{ animation:scorePop .62s .18s both cubic-bezier(.2, 1.35, .45, 1); }
-    .confidence-fill,
-    .mini-progress-fill{ transition:width 1.05s cubic-bezier(.2, .8, .25, 1); }
-}
-
-@keyframes scorePop{
-    from{ opacity:0; transform:scale(.72); }
-    to{ opacity:1; transform:scale(1); }
-}
-
-/* ======================================================
-   RECOMMENDATION CARD
-====================================================== */
-
-.recommendation-card{
-    background:#fff;
-    border:1px solid #e9edf5;
-    border-radius:22px;
-    padding:24px;
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-}
-
-.recommendation-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.recommendation-header h4{
-    margin:0;
-}
-
-.signal-badge{
-    padding:8px 16px;
-    border-radius:999px;
-    font-size:13px;
-    font-weight:600;
-}
-
-.signal-buy{
-    background:#ecfdf5;
-    color:#16a34a;
-}
-
-.signal-sell{
-    background:#fef2f2;
-    color:#dc2626;
-}
-
-.signal-hold{
-    background:#fefce8;
-    color:#ca8a04;
-}
-
-.confidence-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.ai-summary{
-    color:#64748b;
-    line-height:1.7;
-    font-size:14px;
-}
-
-/* ======================================================
-   STRENGTHS / RISKS
-====================================================== */
-
-.analysis-grid-two{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-}
-
-.analysis-section{
-    background:#f8fafc;
-    border-radius:16px;
-    padding:18px;
-}
-
-.analysis-section h5{
-    margin-bottom:14px;
-    font-size:15px;
-}
-
-.analysis-section ul{
-    padding-left:18px;
-    margin:0;
-}
-
-.analysis-section li{
-    margin-bottom:10px;
-    color:#475569;
-    line-height:1.6;
-    font-size:14px;
-}
-
-/* ======================================================
-   TARGET BOXES
-====================================================== */
-
-.target-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
-}
-
-.target-box{
-    background:#f8fafc;
-    border-radius:16px;
-    padding:18px;
-    text-align:center;
-}
-
-.target-box small{
-    display:block;
-    color:#6b7280;
-    margin-bottom:8px;
-}
-
-.target-box strong{
-    color:#111827;
-    font-size:18px;
-}
-
-/* ======================================================
-   NEWS
-====================================================== */
-
-.latest-news-card{
-    background:#fff;
-    border:1px solid #e9edf5;
-    border-radius:22px;
-    padding:22px;
-    height:700px;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 8px 25px rgba(15,23,42,.04);
-}
-
-.latest-news-card h4{
-    margin-bottom:18px;
-}
-
-.news-scroll{
-    flex:1;
-    overflow-y:auto;
-    padding-right:8px;
-}
-
-.news-scroll::-webkit-scrollbar{
-    width:6px;
-}
-
-.news-scroll::-webkit-scrollbar-thumb{
-    background:#c4b5fd;
-    border-radius:20px;
-}
-
-.news-item{
-    padding:18px 0;
-    border-bottom:1px solid #edf2f7;
-}
-
-.news-item:last-child{
-    border-bottom:none;
-}
-
-.news-item h5{
-    font-size:17px;
-    margin-bottom:10px;
-    color:#111827;
-}
-
-.news-item p{
-    color:#64748b;
-    font-size:14px;
-    line-height:1.6;
-    margin-bottom:12px;
-}
-
-.news-footer{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:15px;
-    font-size:13px;
-}
-
-.news-footer span{
-    color:#64748b;
-}
-
-.read-more-link{
-    color:#7c3aed;
-    font-weight:600;
-}
-
-.read-more-link:hover{
-    text-decoration:underline;
-}
-
-.placeholder-content{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100%;
-    color:#94a3b8;
-}
-
-/* ======================================================
-   EMPTY STATE
-====================================================== */
-
-.empty-state{
-    background:#fff;
-    border-radius:22px;
-    padding:80px 40px;
-    text-align:center;
-    border:1px solid #e9edf5;
-}
-
-.empty-state i{
-    font-size:70px;
-    color:#7c3aed;
-    margin-bottom:18px;
-}
-
-.empty-state h2{
-    margin-bottom:10px;
-}
-
-.empty-state p{
-    color:#64748b;
-}
-
-/* ======================================================
-   RESPONSIVE
-====================================================== */
-
-@media(max-width:1100px){
-
-    .analysis-layout{
-        grid-template-columns:1fr;
-    }
-
-    .latest-news-card{
-        height:550px;
-    }
-
-    .below-chart-grid{
-        grid-template-columns:1fr;
-    }
-
-    .analysis-score-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-}
-
-@media(max-width:768px){
-
-    .analysis-hero{
-        flex-direction:column;
-    }
-
-    .hero-right{
-        width:100%;
-        align-items:flex-start;
-    }
-
-    .hero-grid{
-        grid-template-columns:1fr;
-    }
-
-    .analysis-score-grid{
-        grid-template-columns:1fr;
-    }
-
-    .analysis-grid-two{
-        grid-template-columns:1fr;
-    }
-
-    .target-grid{
-        grid-template-columns:1fr;
-    }
-
-}
-
-
-.ai-card-header {
+/* ==========================================================================
+   InvestIQ Stock Analysis Dashboard - Clean Modern UI
+   ========================================================================== */
+
+.analysis-page {
+    width: min(1440px, 100%);
+    margin: 0 auto;
+    padding: 24px 16px 60px;
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 24px;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Section Headings
+   ========================================================================== */
+
+.section-heading {
+    display: flex;
     justify-content: space-between;
-    margin-bottom: 28px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
-.ai-section-label {
+.section-heading span {
     display: block;
-    color: #7a8193;
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 5px;
+    color: #7c3aed;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
 }
 
-.ai-card-header h4 {
-    color: #111827;
+.section-heading h4 {
+    margin: 0;
+    color: #0f172a;
     font-size: 18px;
     font-weight: 700;
-    margin: 0;
 }
 
-.ai-status-icon {
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #7c3aed;
-    background: #f1eafe;
-    border-radius: 13px;
-    font-size: 21px;
-}
-
-
-/* Signal and confidence */
-
-.ai-signal-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 25px;
-}
-
-.ai-small-label {
-    display: block;
-    color: #7a8193;
-    font-size: 13px;
-    margin-bottom: 6px;
-}
-
-.ai-signal {
-    display: inline-block;
+.section-heading i {
     font-size: 20px;
+    color: #8b5cf6;
+    background: #f5f3ff;
+    padding: 8px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+}
+
+/* ==========================================================================
+   1. Hero Section
+   ========================================================================== */
+
+.analysis-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 32px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.hero-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hero-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hero-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: #f5f3ff;
+    color: #6d28d9;
+    font-size: 12px;
     font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.hero-exchange-badge {
+    padding: 4px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.hero-company-name {
     margin: 0;
-    padding: 6px 16px;
-    border-radius: 11px;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.hero-symbol-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.hero-symbol, .hero-sector {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.hero-right {
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.hero-price-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.hero-price {
+    font-size: 38px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
+    letter-spacing: -0.02em;
     line-height: 1;
 }
 
-
-/* Dynamic signal colors */
-
-.buy-signal {
-    color: #059669;
-    background: #ecfdf5;
+.hero-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
 }
 
-.hold-signal {
-    color: #d97706;
-    background: #fff7e6;
+.hero-change.positive {
+    color: #15803d;
+    background: #f0fdf4;
 }
 
-.sell-signal {
-    color: #dc2626;
+.hero-change.negative {
+    color: #b91c1c;
     background: #fef2f2;
 }
 
-/* Final layout overrides: kept last so older page styles cannot expand cards. */
-.analysis-page{
-    width:min(1440px, 100%);
-    margin:0 auto;
-    padding:28px 0 48px;
-    gap:22px;
+.hero-change.neutral {
+    color: #475569;
+    background: #f1f5f9;
 }
 
-.analysis-score-grid{
-    grid-template-columns:minmax(280px, 1.45fr) minmax(200px, .8fr) repeat(2, minmax(190px, .75fr));
-    align-items:stretch;
+.hero-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
 }
 
-.analysis-ai-card,
-.overall-score-card,
-.mini-score-card{ min-height:278px; }
-
-.analysis-ai-card{
-    display:flex;
-    flex-direction:column;
+.hero-item {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: center;
 }
 
-.analysis-ai-card .confidence-progress{ margin-top:auto; }
-
-.analysis-grid{
-    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
-    gap:14px;
+.hero-item-label {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
 }
 
-.info-card{
-    min-height:122px;
-    padding:18px 20px;
+.hero-item-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
 }
 
-.info-card p{
-    font-size:20px;
-    line-height:1.3;
+.hero-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #16a34a;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-.analysis-layout{
-    grid-template-columns:minmax(0, 1fr) minmax(300px, 360px);
-    gap:22px;
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    animation: livePulse 1.8s infinite;
 }
 
-.below-chart-grid{
-    grid-template-columns:minmax(190px, 240px) minmax(0, 1fr);
-    gap:18px;
-    align-items:start;
+@keyframes livePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.5; }
 }
 
-.company-card{
-    position:sticky;
-    top:24px;
-    align-self:start;
-    height:fit-content;
-    padding:20px;
+/* ==========================================================================
+   2. 7-Factor Signal & Composite Score (Top Row)
+   ========================================================================== */
+
+.signal-score-row {
+    display: grid;
+    grid-template-columns: minmax(320px, 1.2fr) minmax(380px, 1.8fr);
+    gap: 20px;
 }
 
-.company-card h4{ margin-bottom:12px; }
-
-.company-card a{
-    display:inline-block;
-    max-width:100%;
-    padding:8px 10px;
-    background:#f5f3ff;
-    border-radius:10px;
-    font-size:13px;
-    line-height:1.45;
+.signal-card, .overall-score-card, .mini-score-card, .chart-card, .company-snapshot-card, .technicals-panel, .fundamentals-card, .latest-news-card, .ai-analysis-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
 }
 
-.recommendation-card{ gap:18px; }
-
-.latest-news-card{
-    min-height:480px;
-    height:calc(100vh - 180px);
-    max-height:700px;
-    position:sticky;
-    top:24px;
+.signal-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-@media(max-width:1100px){
-    .analysis-score-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-    .analysis-layout{ grid-template-columns:1fr; }
-    .latest-news-card{ position:static; height:520px; }
+.signal-value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
-@media(max-width:768px){
-    .analysis-page{ padding:18px 0 36px; }
-    .analysis-score-grid,
-    .below-chart-grid{ grid-template-columns:1fr; }
-    .company-card{ position:static; }
+.signal-value {
+    font-size: 26px;
+    font-weight: 800;
+    padding: 6px 16px;
+    border-radius: 12px;
+    letter-spacing: 0.02em;
 }
 
-/* Final page arrangement: consistent visual hierarchy across every stock. */
-.analysis-page{
-    gap:28px;
+.buy-signal {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
 }
 
-.analysis-hero,
-.analysis-ai-card,
-.overall-score-card,
-.mini-score-card,
-.info-card,
-.chart-card,
-.company-card,
-.recommendation-card,
-.latest-news-card{
-    transition:transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+.hold-signal {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
 }
 
-.analysis-hero{
-    align-items:center;
-    min-height:230px;
+.sell-signal {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
 }
 
-.analysis-score-grid{
-    grid-template-columns:minmax(300px, 1.55fr) minmax(210px, .82fr) repeat(2, minmax(190px, .75fr));
-    gap:18px;
+.signal-confidence-badge {
+    text-align: right;
 }
 
-.analysis-ai-card,
-.overall-score-card,
-.mini-score-card{
-    min-height:255px;
-    padding:22px;
+.signal-confidence-badge span {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
 }
 
-.analysis-ai-card:hover,
-.overall-score-card:hover,
-.mini-score-card:hover,
-.chart-card:hover,
-.latest-news-card:hover,
-.recommendation-card:hover{
-    transform:translateY(-4px);
-    border-color:#ddd6fe;
-    box-shadow:0 18px 38px rgba(76, 29, 149, .10);
+.signal-confidence-badge b {
+    font-size: 16px;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
 }
 
-/* Fundamentals: compact two-line cards instead of large empty blocks. */
-.analysis-grid{
-    grid-template-columns:repeat(4, minmax(0, 1fr));
-    gap:14px;
+.signal-summary {
+    color: #475569;
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0 0 16px;
 }
 
-.info-card{
-    min-height:108px;
-    padding:17px 19px;
+.confidence-progress {
+    width: 100%;
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 18px;
 }
 
-.info-card h5{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    margin-bottom:9px;
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    border-radius: 99px;
+    transition: width 1s ease;
 }
 
-.info-card p{
-    font-size:18px;
+.signal-targets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: auto;
 }
 
-/* Chart and news keep equal, intentional vertical rhythm. */
-.analysis-layout{
-    grid-template-columns:minmax(0, 1.7fr) minmax(310px, .7fr);
-    align-items:stretch;
-    margin-top:0;
+.target-chip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
 }
 
-.chart-card{
-    min-height:470px;
+.target-chip span {
+    display: block;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 2px;
 }
 
-.latest-news-card{
-    position:static;
-    min-height:470px;
-    height:auto;
-    max-height:none;
+.target-chip strong {
+    font-size: 14px;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
 }
 
-.below-chart-grid{
-    grid-template-columns:minmax(0, 1fr);
-    gap:18px;
-    margin-top:22px;
+/* Score Side Breakdown */
+.score-side {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
 }
 
-.company-card{
-    position:static;
-    width:fit-content;
-    max-width:100%;
-    padding:16px 18px;
+.overall-score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
 }
 
-.company-card h4{
-    margin:0 0 8px;
-    font-size:15px;
+.score-heading-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
-.company-card a{
-    padding:0;
-    background:transparent;
+.overall-score-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 12px 0;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
 }
 
-.recommendation-card{
-    width:100%;
-    gap:18px;
+.overall-grade-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 6px;
 }
 
-.recommendation-header h4::before{
-    content:"AI Analysis";
-    display:block;
-    margin-bottom:4px;
-    color:#7c3aed;
-    font-size:11px;
-    font-weight:800;
-    letter-spacing:.08em;
-    text-transform:uppercase;
+.grade-strong { background: #ecfdf5; color: #059669; }
+.grade-buy { background: #f5f3ff; color: #6d28d9; }
+.grade-hold { background: #fffbeb; color: #d97706; }
+.grade-caution { background: #fef2f2; color: #dc2626; }
+
+.score-description {
+    font-size: 11px;
+    color: #94a3b8;
 }
 
-.analysis-grid-two{
-    gap:14px;
+.mini-score-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
 }
 
-.analysis-section{
-    padding:16px;
-    border:1px solid #edf0f6;
+.mini-score-card {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
 }
 
-.target-box{
-    padding:15px;
-    border:1px solid #edf0f6;
+.mini-score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Deliberate staggered entrance, disabled for users who prefer less motion. */
-@media (prefers-reduced-motion: no-preference){
-    .analysis-grid .info-card{
-        animation:analysisReveal .45s both cubic-bezier(.22, .8, .3, 1);
+.mini-score-header span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.mini-score-header strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
+}
+
+.mini-progress {
+    width: 100%;
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.mini-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 99px;
+}
+
+/* ==========================================================================
+   3. Performance & Valuation Metrics Row
+   ========================================================================== */
+
+.performance-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.8fr);
+    gap: 20px;
+}
+
+.chart-card {
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-legend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f8fafc;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #7c3aed;
+}
+
+.chart-embed-wrapper {
+    flex: 1;
+    min-height: 340px;
+    position: relative;
+    width: 100%;
+}
+
+.company-snapshot-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.snapshot-metrics-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.snapshot-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+}
+
+.snap-label {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.snap-val {
+    color: #0f172a;
+    font-size: 14.5px;
+    font-weight: 700;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
+}
+
+.company-website-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: #f5f3ff;
+    color: #6d28d9;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.company-website-btn:hover {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+/* ==========================================================================
+   4. Technical Indicator Levels & Pivots Grid
+   ========================================================================== */
+
+.technicals-section {
+    width: 100%;
+}
+
+.technicals-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+}
+
+.tech-levels-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 6px;
+}
+
+.tech-level-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tech-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.tech-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
+}
+
+.tech-level-card.support-card {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.tech-level-card.support-card .tech-val {
+    color: #15803d;
+}
+
+.tech-level-card.resistance-card {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+.tech-level-card.resistance-card .tech-val {
+    color: #b91c1c;
+}
+
+/* ==========================================================================
+   5. Fundamentals Profile & Latest News Row
+   ========================================================================== */
+
+.fundamentals-news-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+    gap: 20px;
+    align-items: stretch;
+}
+
+.fundamentals-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.profile-data-item {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.p-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.p-val {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.latest-news-card {
+    display: flex;
+    flex-direction: column;
+    max-height: 480px;
+}
+
+.news-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.news-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.news-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.news-item {
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.news-item:hover {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.news-item-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.45;
+    margin: 0 0 8px;
+}
+
+.news-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 11.5px;
+}
+
+.news-source {
+    color: #64748b;
+}
+
+.read-more-link {
+    color: #7c3aed;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.read-more-link:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   6. AI Strengths, Risks & Outlook Panel
+   ========================================================================== */
+
+.ai-analysis-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.analysis-grid-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.analysis-section {
+    border-radius: 14px;
+    padding: 18px 20px;
+}
+
+.analysis-section.strengths {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.analysis-section.strengths h5 {
+    color: #15803d;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 12px;
+}
+
+.analysis-section.risks {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.analysis-section.risks h5 {
+    color: #b91c1c;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 12px;
+}
+
+.analysis-section ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.analysis-section li {
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.5;
+}
+
+.target-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.target-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+}
+
+.target-box small {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.target-box strong {
+    font-size: 18px;
+    color: #0f172a;
+    font-family: var(--font-number, "IBM Plex Mono", monospace);
+}
+
+/* ==========================================================================
+   7. Empty Search State
+   ========================================================================== */
+
+.empty-state {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 80px 24px;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 56px;
+    color: #8b5cf6;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.empty-state h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #64748b;
+    font-size: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .signal-score-row {
+        grid-template-columns: 1fr;
     }
-    .analysis-grid .info-card:nth-child(2){animation-delay:.04s}
-    .analysis-grid .info-card:nth-child(3){animation-delay:.08s}
-    .analysis-grid .info-card:nth-child(4){animation-delay:.12s}
-    .analysis-grid .info-card:nth-child(5){animation-delay:.16s}
-    .analysis-grid .info-card:nth-child(6){animation-delay:.20s}
-    .analysis-grid .info-card:nth-child(7){animation-delay:.24s}
-    .analysis-grid .info-card:nth-child(8){animation-delay:.28s}
-    .analysis-grid .info-card:nth-child(9){animation-delay:.32s}
-    .analysis-grid .info-card:nth-child(10){animation-delay:.36s}
-    .analysis-grid .info-card:nth-child(11){animation-delay:.40s}
+    .score-side {
+        grid-template-columns: 1fr;
+    }
+    .performance-row, .fundamentals-news-row {
+        grid-template-columns: 1fr;
+    }
+    .tech-levels-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-@media(max-width:1200px){
-    .analysis-score-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
-    .analysis-grid{grid-template-columns:repeat(3, minmax(0, 1fr));}
+@media (max-width: 768px) {
+    .analysis-hero {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .hero-right {
+        align-items: flex-start;
+        min-width: 100%;
+    }
+    .hero-price-header {
+        align-items: flex-start;
+    }
+    .analysis-grid-two {
+        grid-template-columns: 1fr;
+    }
+    .profile-data-grid {
+        grid-template-columns: 1fr;
+    }
+    .target-grid {
+        grid-template-columns: 1fr;
+    }
+    .mini-score-grid {
+        grid-template-columns: 1fr;
+    }
+    .tech-levels-grid {
+        grid-template-columns: 1fr;
+    }
 }
-
-@media(max-width:900px){
-    .analysis-layout{grid-template-columns:1fr;}
-    .analysis-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
-    .chart-card,.latest-news-card{min-height:400px;}
-}
-
-@media(max-width:600px){
-    .analysis-grid{grid-template-columns:1fr;}
-    .analysis-score-grid{grid-template-columns:1fr;}
-    .analysis-hero{align-items:flex-start;}
-}
-
-/* Stock-analysis dashboard layout. */
-.analysis-dashboard{gap:24px;}
-.dashboard-section{background:#fff;border:1px solid #e7eaf1;border-radius:22px;box-shadow:0 12px 30px rgba(15,23,42,.05);}
-.section-heading span{display:block;color:#7c3aed;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
-.section-heading h4{margin:4px 0 0;color:#111827;font-size:20px;}
-.signal-score-row{display:grid;grid-template-columns:minmax(310px,1.05fr) minmax(0,1.5fr);gap:22px;padding:22px;}
-.signal-card{padding:4px 2px;}.signal-card .section-heading{display:flex;align-items:center;justify-content:space-between;}.signal-card .section-heading i{color:#7c3aed;font-size:20px;}
-.signal-value{display:block;margin:18px 0 8px;font-size:34px;line-height:1;font-weight:800;background:transparent!important;}
-.signal-confidence{color:#64748b;font-size:14px;}.signal-confidence b{color:#111827;}.signal-card p{margin:16px 0 0;color:#64748b;line-height:1.65;font-size:14px;}.signal-card .confidence-progress{margin:16px 0;}
-.signal-targets{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.signal-targets div{padding:12px;background:#f8fafc;border-radius:12px;}.signal-targets span{display:block;color:#7a8193;font-size:11px;text-transform:uppercase;letter-spacing:.05em;}.signal-targets strong{display:block;margin-top:4px;color:#111827;font-size:15px;}
-.score-side{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(280px,1.2fr);gap:18px;}.score-side .overall-score-card{min-height:0;padding:12px;}.score-side .overall-score-circle{width:94px;height:94px;margin:12px 0;font-size:29px;}.mini-score-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;}.mini-score-pair .mini-score-card{min-height:0;padding:20px;}.mini-score-pair .mini-score-card strong{font-size:30px;}.mini-score-pair .mini-progress{margin-top:20px;}
-.performance-row,.fundamentals-news-row{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,.75fr);gap:22px;background:transparent;border:0;box-shadow:none;}.price-performance-card,.company-snapshot-card,.fundamentals-panel,.latest-news-card,.ai-analysis-panel{padding:22px;}.price-performance-card{min-height:440px;}.price-performance-card .section-heading{margin-bottom:8px;}.company-snapshot-card,.fundamentals-panel,.ai-analysis-panel{background:#fff;border:1px solid #e7eaf1;border-radius:22px;box-shadow:0 12px 30px rgba(15,23,42,.05);}.snapshot-metrics{margin-top:18px;border:1px solid #eef0f5;border-radius:14px;overflow:hidden;}.snapshot-metrics div{padding:14px;border-bottom:1px solid #eef0f5;}.snapshot-metrics div:last-child{border:0;}.snapshot-metrics span,.fundamentals-list span{display:block;color:#7a8193;font-size:12px;}.snapshot-metrics strong{display:block;margin-top:4px;font-size:17px;color:#111827;}.company-website{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:9px 11px;color:#6d28d9;background:#f5f3ff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;}
-.fundamentals-list{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:16px;border-top:1px solid #edf0f6;}.fundamentals-list div{display:flex;justify-content:space-between;gap:18px;padding:12px 0;border-bottom:1px solid #edf0f6;}.fundamentals-list strong{max-width:60%;color:#111827;font-size:14px;text-align:right;}.latest-news-card{position:static;min-height:0;height:auto;max-height:none;}.latest-news-card .section-heading{margin-bottom:8px;}.news-item{padding:14px 0;}.news-item h5{font-size:14px;line-height:1.45;margin-bottom:8px;}.ai-analysis-panel .section-heading{margin-bottom:18px;}.ai-analysis-panel .analysis-grid-two{gap:16px;}.ai-analysis-panel .analysis-section{min-height:150px;}.ai-analysis-panel .target-grid{margin-top:16px;}
-@media(prefers-reduced-motion:no-preference){.analysis-dashboard .dashboard-section,.performance-row>*,.fundamentals-news-row>*{animation:analysisReveal .5s both cubic-bezier(.22,.8,.3,1)}.signal-score-row{animation-delay:.06s}.performance-row>*{animation-delay:.12s}.fundamentals-news-row>*{animation-delay:.18s}.ai-analysis-panel{animation-delay:.24s}}
-@media(max-width:1000px){.signal-score-row,.performance-row,.fundamentals-news-row{grid-template-columns:1fr;}.score-side{grid-template-columns:1fr;}.score-side .overall-score-card{min-height:170px;}.mini-score-pair{grid-template-columns:1fr 1fr;}.price-performance-card{min-height:380px;}}
-@media(max-width:640px){.signal-score-row,.price-performance-card,.company-snapshot-card,.fundamentals-panel,.latest-news-card,.ai-analysis-panel{padding:17px;}.mini-score-pair,.fundamentals-list,.ai-analysis-panel .analysis-grid-two{grid-template-columns:1fr;}.hero-price{font-size:34px;}.hero-grid{grid-template-columns:repeat(3,1fr);}.hero-item{padding:10px;}.hero-item strong{font-size:13px;}}
-

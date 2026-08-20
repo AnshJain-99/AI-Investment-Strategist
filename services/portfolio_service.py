@@ -15,8 +15,14 @@ class PortfolioService:
                 name="Primary Portfolio",
                 currency="INR"
             )
-            db.session.add(portfolio)
-            db.session.commit()
+            try:
+                db.session.add(portfolio)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                portfolio = Portfolio.query.filter_by(user_id=user_id).first()
+                if not portfolio:
+                    raise
         return portfolio
 
     @staticmethod
@@ -33,50 +39,53 @@ class PortfolioService:
 
         total_amount = (quantity * price) + fees
 
-        # Update or create holding with Weighted Average Buy Price
-        holding = Holding.query.filter_by(portfolio_id=portfolio_id, symbol=symbol).first()
-        if holding:
-            prev_qty = holding.quantity
-            prev_avg = holding.average_buy_price
-            new_qty = prev_qty + quantity
-            # Weighted average price formula:
-            new_avg_price = ((prev_qty * prev_avg) + (quantity * price)) / new_qty
-            holding.quantity = new_qty
-            holding.average_buy_price = round(new_avg_price, 4)
-            holding.last_updated = datetime.now(timezone.utc)
-            if sector and sector != "Others":
-                holding.sector = sector
-        else:
-            holding = Holding(
+        try:
+            # Update or create holding with Weighted Average Buy Price
+            holding = Holding.query.filter_by(portfolio_id=portfolio_id, symbol=symbol).first()
+            if holding:
+                prev_qty = holding.quantity
+                prev_avg = holding.average_buy_price
+                new_qty = prev_qty + quantity
+                # Weighted average price formula:
+                new_avg_price = ((prev_qty * prev_avg) + (quantity * price)) / new_qty
+                holding.quantity = new_qty
+                holding.average_buy_price = round(new_avg_price, 4)
+                holding.last_updated = datetime.now(timezone.utc)
+                if sector and sector != "Others":
+                    holding.sector = sector
+            else:
+                holding = Holding(
+                    portfolio_id=portfolio_id,
+                    symbol=symbol,
+                    stock_name=stock_name,
+                    quantity=quantity,
+                    average_buy_price=round(price, 4),
+                    sector=sector or "Others",
+                    last_updated=datetime.now(timezone.utc)
+                )
+                db.session.add(holding)
+
+            # Log immutable transaction
+            txn = Transaction(
                 portfolio_id=portfolio_id,
+                user_id=user_id,
                 symbol=symbol,
                 stock_name=stock_name,
+                transaction_type="BUY",
                 quantity=quantity,
-                average_buy_price=round(price, 4),
-                sector=sector or "Others",
-                last_updated=datetime.now(timezone.utc)
+                price=price,
+                total_amount=round(total_amount, 2),
+                fees=fees,
+                realized_pnl=0.0,
+                notes=notes,
+                created_at=datetime.now(timezone.utc)
             )
-            db.session.add(holding)
-
-        # Log immutable transaction
-        txn = Transaction(
-            portfolio_id=portfolio_id,
-            user_id=user_id,
-            symbol=symbol,
-            stock_name=stock_name,
-            transaction_type="BUY",
-            quantity=quantity,
-            price=price,
-            total_amount=round(total_amount, 2),
-            fees=fees,
-            realized_pnl=0.0,
-            notes=notes,
-            created_at=datetime.now(timezone.utc)
-        )
-        db.session.add(txn)
-        db.session.commit()
-
-        return holding, txn
+            db.session.add(txn)
+            db.session.commit()
+            return holding, txn
+        except Exception:
+            db.session.rollback()
+            raise
 
     @staticmethod
     def record_sell(portfolio_id, user_id, symbol, quantity, price, fees=0.0, notes=""):
@@ -87,47 +96,52 @@ class PortfolioService:
         if "." not in symbol and not symbol.startswith("^"):
             symbol = f"{symbol}.NS"
 
-        holding = Holding.query.filter_by(portfolio_id=portfolio_id, symbol=symbol).first()
-        if not holding or holding.quantity < quantity:
-            avail = holding.quantity if holding else 0
-            raise ValueError(f"Insufficient shares to sell. Available: {avail}, Requested: {quantity}")
+        try:
+            holding = Holding.query.filter_by(portfolio_id=portfolio_id, symbol=symbol).first()
+            if not holding or holding.quantity < quantity:
+                avail = holding.quantity if holding else 0
+                raise ValueError(f"Insufficient shares to sell. Available: {avail}, Requested: {quantity}")
 
-        # Realized P&L calculation: (Sell Price - Avg Buy Price) * Sold Qty - Fees
-        cost_basis = holding.average_buy_price * quantity
-        gross_proceeds = price * quantity
-        realized_pnl = round((gross_proceeds - cost_basis) - fees, 2)
-        total_amount = round(gross_proceeds - fees, 2)
+            # Realized P&L calculation: (Sell Price - Avg Buy Price) * Sold Qty - Fees
+            cost_basis = holding.average_buy_price * quantity
+            gross_proceeds = price * quantity
+            realized_pnl = round((gross_proceeds - cost_basis) - fees, 2)
+            total_amount = round(gross_proceeds - fees, 2)
 
-        # Update remaining holding
-        remaining_qty = max(0.0, holding.quantity - quantity)
-        if remaining_qty <= 0.0001:
-            holding.quantity = 0.0
-            db.session.delete(holding)
-            return_holding = None
-        else:
-            holding.quantity = remaining_qty
-            holding.last_updated = datetime.now(timezone.utc)
-            return_holding = holding
+            stock_name = holding.stock_name
 
-        # Log immutable transaction with realized P&L
-        txn = Transaction(
-            portfolio_id=portfolio_id,
-            user_id=user_id,
-            symbol=symbol,
-            stock_name=holding.stock_name,
-            transaction_type="SELL",
-            quantity=quantity,
-            price=price,
-            total_amount=total_amount,
-            fees=fees,
-            realized_pnl=realized_pnl,
-            notes=notes,
-            created_at=datetime.now(timezone.utc)
-        )
-        db.session.add(txn)
-        db.session.commit()
+            # Update remaining holding
+            remaining_qty = max(0.0, holding.quantity - quantity)
+            if remaining_qty <= 0.0001:
+                holding.quantity = 0.0
+                db.session.delete(holding)
+                return_holding = None
+            else:
+                holding.quantity = remaining_qty
+                holding.last_updated = datetime.now(timezone.utc)
+                return_holding = holding
 
-        return return_holding, txn
+            # Log immutable transaction with realized P&L
+            txn = Transaction(
+                portfolio_id=portfolio_id,
+                user_id=user_id,
+                symbol=symbol,
+                stock_name=stock_name,
+                transaction_type="SELL",
+                quantity=quantity,
+                price=price,
+                total_amount=total_amount,
+                fees=fees,
+                realized_pnl=realized_pnl,
+                notes=notes,
+                created_at=datetime.now(timezone.utc)
+            )
+            db.session.add(txn)
+            db.session.commit()
+            return return_holding, txn
+        except Exception:
+            db.session.rollback()
+            raise
 
     @staticmethod
     def get_portfolio_summary(portfolio_id):
@@ -372,32 +386,34 @@ class PortfolioService:
 
     @staticmethod
     def _fetch_stock_meta(symbol):
-        cache_key = f"meta_{symbol}"
-        cached = CacheService.get(cache_key)
-        if cached:
-            return cached
+        clean_symbol = CacheService.normalize_symbol(symbol)
+        cache_key = f"meta_{clean_symbol}"
+
+        def _fetch():
+            ticker = yf.Ticker(clean_symbol)
+            info = ticker.info or {}
+            name = info.get("longName") or info.get("shortName") or clean_symbol.replace(".NS", "")
+            sector = info.get("sector") or "Others"
+            return (name, sector)
 
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info or {}
-            name = info.get("longName") or info.get("shortName") or symbol.replace(".NS", "")
-            sector = info.get("sector") or "Others"
-            res = (name, sector)
-            CacheService.set(cache_key, res, ttl_seconds=86400) # 24h
-            return res
+            return CacheService.get_or_set(
+                cache_key,
+                _fetch,
+                ttl_seconds=CacheService.TTL_STOCK_META,
+                allow_stale=True
+            )
         except Exception:
-            clean = symbol.replace(".NS", "").replace(".BO", "")
+            clean = clean_symbol.replace(".NS", "").replace(".BO", "")
             return clean, "Others"
 
     @staticmethod
     def _fetch_live_price(symbol):
-        cache_key = f"price_{symbol}"
-        cached = CacheService.get(cache_key)
-        if cached:
-            return cached
+        clean_symbol = CacheService.normalize_symbol(symbol)
+        cache_key = f"price_{clean_symbol}"
 
-        try:
-            ticker = yf.Ticker(symbol)
+        def _fetch():
+            ticker = yf.Ticker(clean_symbol)
             fast = ticker.fast_info or {}
             price = fast.get("lastPrice")
             prev = fast.get("previousClose")
@@ -413,10 +429,22 @@ class PortfolioService:
             if price is not None:
                 day_change_val = (price - prev) if prev else 0.0
                 day_change_pct = ((day_change_val / prev) * 100) if prev else 0.0
-                res = (float(price), float(day_change_pct), float(day_change_val))
-                CacheService.set(cache_key, res, ttl_seconds=60) # 60s
+                return (float(price), float(day_change_pct), float(day_change_val))
+            return None
+
+        try:
+            res = CacheService.get_or_set(
+                cache_key,
+                _fetch,
+                ttl_seconds=CacheService.TTL_STOCK_DETAILS,
+                allow_stale=True
+            )
+            if res:
                 return res
         except Exception as e:
-            print(f"Price fetch error for {symbol}:", e)
+            print(f"Price fetch error for {clean_symbol}:", e)
+            stale = CacheService.get(cache_key, allow_stale=True)
+            if stale:
+                return stale
 
         return None, 0.0, 0.0

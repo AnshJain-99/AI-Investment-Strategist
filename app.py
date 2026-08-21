@@ -742,7 +742,7 @@ def send_otp_email(recipient, otp):
         return False
 
     message = EmailMessage()
-    message["Subject"] = "Your InvestIQ OTP"
+    message["Subject"] = "Your Stratix AI OTP"
     message.set_content(
         "Use this OTP to reset your password:\n\n"
         f"{otp}\n\n"

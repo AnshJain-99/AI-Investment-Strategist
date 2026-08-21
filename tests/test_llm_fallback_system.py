@@ -42,7 +42,7 @@ class TestLLMFallbackSystem(unittest.TestCase):
                 # Test public methods return deterministic fallback
                 ans = LLMService.ask_financial_assistant("What is P/E?")
                 self.assertTrue(ans["success"])
-                self.assertIn("InvestIQ AI Assistant (Offline Mode)", ans["answer"])
+                self.assertIn("Stratix AI Assistant (Offline Mode)", ans["answer"])
 
     def test_primary_succeeds_immediately(self):
         """Verify fast-path: primary model succeeds on first attempt and makes exactly ONE request."""

@@ -67,7 +67,7 @@ body {
 }
 
 .auth-scene::before {
-    content: "InvestIQ";
+    content: "Stratix AI";
     position: absolute;
     left: 68px;
     top: 44px;

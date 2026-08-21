@@ -1,6 +1,6 @@
-# 📈 InvestIQ - AI Investment Strategist & Quantitative Research Platform
+# 📈 Stratix AI - Intelligent Multi-Factor Market Strategist & Quantitative Platform
 
-InvestIQ is an institutional-grade, web-based financial research and portfolio management platform designed to simplify Indian stock market analysis and empower investors with deterministic quantitative scoring and AI-powered insights.
+Stratix AI is an institutional-grade, web-based financial research and portfolio management platform designed to simplify Indian stock market analysis and empower investors with deterministic quantitative scoring and AI-powered insights.
 
 The platform provides real-time market data, detailed fundamental and technical analysis, interactive price charts, stock comparison engines, FIFO portfolio accounting, and multi-model AI synthesis through a clean, high-performance web interface.
 

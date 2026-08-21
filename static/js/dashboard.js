@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (state === "loading" && window.getTradingSpinnerHTML) {
             chatMessage.innerHTML = window.getTradingSpinnerHTML({
                 size: 'sm',
-                text: 'InvestIQ is analyzing market context...',
+                text: 'Stratix AI is analyzing market context...',
                 centered: false
             });
             askAiAnswer.append(chatMessage);
@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
-    async function askInvestIQ(question) {
+    async function askStratix(question) {
         if (!question || !askAiForm) {
             return;
         }
@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.disabled = true;
         addChatMessage(question, "user");
         const loadingMessage = addChatMessage(
-            "InvestIQ is checking the latest market context...",
+            "Stratix AI is checking the latest market context...",
             "bot",
             "loading"
         );
@@ -226,9 +226,13 @@ document.addEventListener("DOMContentLoaded", () => {
         askAiForm.addEventListener("submit", (event) => {
             event.preventDefault();
             const question = askAiQuestion.value.trim();
-            if (!question) return;
+
+            if (!question) {
+                return;
+            }
+
             askAiQuestion.value = "";
-            askInvestIQ(question);
+            askStratix(question);
         });
     }
 

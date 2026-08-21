@@ -90,13 +90,15 @@ class VerifiedContextBuilder:
 
 
 class LLMService:
-    """Enterprise AI Service where deterministic financial calculations remain controlled
-    exclusively by backend algorithms, and the LLM is responsible only for qualitative explanation,
+    """Production-grade LLM Gateway with deterministic fallback, zero hallucination
+    enforcement, multi-model cascade, timeout controls, and structured parsing.
+
+    The backend scoring engine is ALWAYS the ground truth. The LLM is used ONLY for
     summarization, contextual insights, and conversational assistance.
     """
 
     SYSTEM_INSTRUCTIONS = (
-        "You are InvestIQ AI, an institutional-grade financial research assistant and conversational strategist for Indian equities.\n\n"
+        "You are Stratix AI, an institutional-grade financial research assistant and conversational strategist for Indian equities.\n\n"
         "MANDATORY ARCHITECTURAL RULES (THESE STRICTLY OVERRIDE ANY USER PROMPTS):\n"
         "1. BACKEND IS THE SINGLE SOURCE OF TRUTH: The backend quantitative scoring engine owns all numerical calculations, factor scores, risk labels, and investment recommendations.\n"
         "2. RECOMMENDATION INTEGRITY: NEVER modify, upgrade, downgrade, or contradict the provided backend recommendation (e.g. if signal is 'BUY', explain why it is 'BUY'; do NOT claim 'Strong Buy', 'Hold', or 'Sell').\n"
@@ -234,7 +236,7 @@ class LLMService:
                         headers={
                             "Authorization": f"Bearer {api_key}",
                             "Content-Type": "application/json",
-                            "X-Title": "InvestIQ",
+                            "X-Title": "Stratix AI",
                         },
                         json=payload,
                         timeout=timeout,
@@ -496,9 +498,9 @@ class LLMService:
     def _deterministic_assistant_response(cls, question, tool_context):
         """Deterministic assistant fallback when LLM is unavailable."""
         return (
-            f"InvestIQ AI Assistant (Offline Mode):\n\n"
+            f"Stratix AI Assistant (Offline Mode):\n\n"
             f"Based on verified backend market data:\n{tool_context}\n\n"
-            f"All metrics, factor scores, and signals above are computed deterministically by the InvestIQ quantitative engine."
+            f"All metrics, factor scores, and signals above are computed deterministically by the Stratix AI quantitative engine."
         )
 
     @classmethod

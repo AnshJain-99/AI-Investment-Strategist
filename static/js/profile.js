@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggles = document.querySelectorAll(".settings-toggle");
 
     toggles.forEach((toggle) => {
-        const storageKey = `investIQ.${toggle.dataset.setting}`;
+        const storageKey = `stratixAI.${toggle.dataset.setting}`;
         const savedValue = localStorage.getItem(storageKey);
 
         if (savedValue !== null) {

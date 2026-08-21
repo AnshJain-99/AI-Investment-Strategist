@@ -44,28 +44,33 @@
         <span class="market-orb orb-one"></span>
         <span class="market-orb orb-two"></span>
     </div>
-    <nav class="landing-nav">
-        <a href="{{ url_for('landing') }}" class="landing-brand">
-            <span class="brand-dots" aria-hidden="true">
-                <i></i><i></i><i></i><i></i><i></i>
-                <i></i><i></i><i></i><i></i><i></i>
-                <i></i><i></i><i></i>
-            </span>
-            <strong>Stratix AI</strong>
-        </a>
+    <header class="landing-nav-wrapper" id="landingNavWrapper">
+        <nav class="landing-nav" id="landingNav">
+            <a href="{{ url_for('landing') }}" class="landing-brand">
+                <span class="brand-dots" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i>
+                </span>
+                <strong>Stratix AI</strong>
+            </a>
 
-        <div class="landing-links">
-            <a href="#platform">Platform</a>
-            <a href="#insights">Insights</a>
-            <a href="#security">Security</a>
-            <a href="#faq">FAQ</a>
-        </div>
+            <div class="landing-links">
+                <a href="#platform">Platform</a>
+                <a href="#insights">Insights</a>
+                <a href="#security">Security</a>
+                <a href="#faq">FAQ</a>
+            </div>
 
-        <div class="landing-actions">
-            <a href="{{ url_for('login') }}">Log In</a>
-            <a href="{{ url_for('register') }}" class="landing-pill">Get Started</a>
-        </div>
-    </nav>
+            <div class="landing-actions">
+                <a href="{{ url_for('login') }}">Log In</a>
+                <a href="{{ url_for('register') }}" class="landing-pill">
+                    <span>Get Started</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </nav>
+    </header>
 
     <main>
         <section class="landing-hero">
@@ -92,7 +97,7 @@
                     </div>
                     <div class="dash-value">
                         <span>Portfolio Value</span>
-                        <strong>₹8,42,180</strong>
+                        <strong class="stat-count" data-target="842180" data-prefix="₹" data-format="inr">₹8,42,180</strong>
                     </div>
                     <div class="mini-line-chart">
                         <svg viewBox="0 0 520 170" role="img" aria-label="Portfolio trend">
@@ -101,9 +106,9 @@
                         </svg>
                     </div>
                     <div class="dash-metrics">
-                        <span><b>+18.42%</b> Return</span>
-                        <span><b>63%</b> Confidence</span>
-                        <span><b>12</b> Tracked</span>
+                        <span><b class="stat-count" data-target="18.42" data-prefix="+" data-suffix="%" data-decimals="2">+18.42%</b> Return</span>
+                        <span><b class="stat-count" data-target="63" data-suffix="%">63%</b> Confidence</span>
+                        <span><b class="stat-count" data-target="12">12</b> Tracked</span>
                     </div>
                 </div>
                 <div class="dash-side-card">
@@ -114,20 +119,30 @@
             </div>
         </section>
 
-        <div class="press-row" aria-label="Platform highlights">
-            <span>Live NSE/BSE data</span>
-            <span>AI recommendations</span>
-            <span>Portfolio alerts</span>
-            <span>Stock comparison</span>
-            <span>Watchlist tracking</span>
+        <div class="marquee-wrapper" aria-label="Platform highlights">
+            <div class="marquee-track">
+                <span><i class="bi bi-broadcast me-2"></i>Live NSE/BSE Data</span>
+                <span><i class="bi bi-cpu me-2"></i>7-Pillar AI Signals</span>
+                <span><i class="bi bi-shield-check me-2"></i>Portfolio Risk Alerts</span>
+                <span><i class="bi bi-intersect me-2"></i>Stock Comparison Engine</span>
+                <span><i class="bi bi-clock-history me-2"></i>Watchlist Tracking</span>
+                <span><i class="bi bi-lightning-charge me-2"></i>Real-time WebSocket Feeds</span>
+                <!-- Duplicate track for seamless infinite marquee loop -->
+                <span><i class="bi bi-broadcast me-2"></i>Live NSE/BSE Data</span>
+                <span><i class="bi bi-cpu me-2"></i>7-Pillar AI Signals</span>
+                <span><i class="bi bi-shield-check me-2"></i>Portfolio Risk Alerts</span>
+                <span><i class="bi bi-intersect me-2"></i>Stock Comparison Engine</span>
+                <span><i class="bi bi-clock-history me-2"></i>Watchlist Tracking</span>
+                <span><i class="bi bi-lightning-charge me-2"></i>Real-time WebSocket Feeds</span>
+            </div>
         </div>
 
-        <section class="landing-section centered" id="platform">
+        <section class="landing-section centered reveal-on-scroll" id="platform">
             <div class="section-kicker">Platform</div>
             <h2>Centralized Investment Management</h2>
             <p>Connect your research, watchlist and portfolio actions in one clean workflow.</p>
 
-            <div class="feature-grid">
+            <div class="feature-grid reveal-stagger">
                 <article>
                     <i class="bi bi-graph-up-arrow"></i>
                     <h3>Live Market Signals</h3>
@@ -146,24 +161,129 @@
             </div>
         </section>
 
-        <section class="split-showcase" id="insights">
-            <div class="showcase-visual">
-                <div class="preview-card compact">
-                    <span>NIFTY Trend</span>
-                    <svg viewBox="0 0 320 130">
-                        <path d="M12 98 C58 95 75 58 113 64 S172 111 211 76 S252 25 304 44"></path>
-                    </svg>
+        <section class="split-showcase reveal-on-scroll" id="insights">
+            <div class="showcase-visual reveal-left">
+                <!-- NIFTY Trend Card with Multi-Line Stacked Area Chart -->
+                <div class="preview-card compact nifty-trend-card">
+                    <div class="card-head-row">
+                        <div>
+                            <span class="card-label">NIFTY 50 Trend</span>
+                            <div class="card-live-value">
+                                <strong class="stat-count" data-target="24852" data-prefix="₹">₹0</strong>
+                                <span class="badge-growth-pill"><i class="bi bi-arrow-up-right"></i> +1.42%</span>
+                            </div>
+                        </div>
+                        <div class="card-tag-pill">Live Market</div>
+                    </div>
+
+                    <div class="chart-container">
+                        <svg viewBox="0 0 320 120" class="nifty-svg-chart" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="aiAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/>
+                                    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.0"/>
+                                </linearGradient>
+                                <linearGradient id="niftyAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.18"/>
+                                    <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
+                                </linearGradient>
+                                <linearGradient id="aiLineGrad" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#c4b5fd"/>
+                                    <stop offset="50%" stop-color="#8b5cf6"/>
+                                    <stop offset="100%" stop-color="#6d28d9"/>
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Reference Grid Lines -->
+                            <line x1="10" y1="30" x2="310" y2="30" class="chart-grid-line"/>
+                            <line x1="10" y1="65" x2="310" y2="65" class="chart-grid-line"/>
+                            <line x1="10" y1="100" x2="310" y2="100" class="chart-grid-line"/>
+
+                            <!-- Stacked Area 2 (NIFTY Benchmark) -->
+                            <path class="area-nifty" d="M10 115 L10 88 C55 92, 90 78, 130 74 C175 70, 220 56, 260 50 L310 38 L310 115 Z" fill="url(#niftyAreaGrad)"/>
+
+                            <!-- Stacked Area 1 (Stratix AI Strategy) -->
+                            <path class="area-ai" d="M10 115 L10 80 C55 76, 90 60, 130 52 C175 45, 220 28, 260 20 L310 12 L310 115 Z" fill="url(#aiAreaGrad)"/>
+
+                            <!-- Benchmark Line -->
+                            <path class="line-nifty" d="M10 88 C55 92, 90 78, 130 74 C175 70, 220 56, 260 50 L310 38"/>
+
+                            <!-- AI Strategy Curve -->
+                            <path class="line-ai" d="M10 80 C55 76, 90 60, 130 52 C175 45, 220 28, 260 20 L310 12"/>
+
+                            <!-- Glowing Pulse Point on AI Peak -->
+                            <g class="chart-pulse-point" transform="translate(310, 12)">
+                                <circle class="pulse-ring" r="7"/>
+                                <circle class="pulse-core" r="4"/>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="chart-legend-row">
+                        <span class="legend-item ai"><i class="legend-dot"></i> Stratix AI (+24.8%)</span>
+                        <span class="legend-item benchmark"><i class="legend-dot"></i> NIFTY 50</span>
+                    </div>
                 </div>
-                <div class="preview-card allocation-card">
-                    <span>Portfolio Growth</span>
-                    <div class="bars">
-                        <i style="height:44%"></i><i style="height:68%"></i>
-                        <i style="height:58%"></i><i style="height:82%"></i>
-                        <i style="height:96%"></i>
+
+                <!-- Portfolio Growth Card with Compact Minimal Bars -->
+                <div class="preview-card allocation-card portfolio-growth-card">
+                    <div class="card-head-row">
+                        <div>
+                            <span class="card-label">Portfolio Growth</span>
+                            <div class="card-live-value">
+                                <strong class="stat-count" data-target="14.82" data-decimals="2" data-prefix="₹" data-suffix="L">₹0L</strong>
+                                <span class="badge-growth-pill"><i class="bi bi-graph-up-arrow"></i> +28.4% YTD</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bars-wrapper">
+                        <div class="bars mini-growth-bars">
+                            <div class="bar-item">
+                                <i style="height:44%"></i>
+                                <span class="bar-lbl">Q1</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:65%"></i>
+                                <span class="bar-lbl">Q2</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:54%"></i>
+                                <span class="bar-lbl">Q3</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:78%"></i>
+                                <span class="bar-lbl">Q4</span>
+                            </div>
+                            <div class="bar-item active">
+                                <i style="height:92%"></i>
+                                <span class="bar-lbl">Now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Allocation Track -->
+                    <div class="portfolio-mini-allocations">
+                        <div class="alloc-item">
+                            <span class="alloc-title">Equities</span>
+                            <div class="alloc-bar"><span class="alloc-fill purple" style="width: 65%"></span></div>
+                            <span class="alloc-pct">65%</span>
+                        </div>
+                        <div class="alloc-item">
+                            <span class="alloc-title">Debt/Gold</span>
+                            <div class="alloc-bar"><span class="alloc-fill cyan" style="width: 25%"></span></div>
+                            <span class="alloc-pct">25%</span>
+                        </div>
+                        <div class="alloc-item">
+                            <span class="alloc-title">Cash</span>
+                            <div class="alloc-bar"><span class="alloc-fill green" style="width: 10%"></span></div>
+                            <span class="alloc-pct">10%</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="showcase-copy">
+            <div class="showcase-copy reveal-right">
                 <div class="section-kicker">Insights</div>
                 <h2>Deep insights, smarter strategies.</h2>
                 <p>
@@ -174,8 +294,8 @@
             </div>
         </section>
 
-        <section class="split-showcase reverse">
-            <div class="showcase-copy">
+        <section class="split-showcase reverse reveal-on-scroll">
+            <div class="showcase-copy reveal-left">
                 <div class="section-kicker">Performance</div>
                 <h2>Track performance at a glance.</h2>
                 <p>
@@ -184,25 +304,103 @@
                 </p>
                 <a href="{{ url_for('login') }}" class="mini-pill">Open Dashboard</a>
             </div>
-            <div class="showcase-visual">
-                <div class="floating-watchlist">
-                    <strong>Effortless Asset Management</strong>
-                    <span><b class="red"></b> Reliance <em>₹1,430.10</em></span>
-                    <span><b></b> Infosys <em>₹1,492.45</em></span>
-                    <span><b></b> HDFC Bank <em>₹1,711.20</em></span>
+            <div class="showcase-visual reveal-right">
+                <!-- Back Floating Card: Clean Watchlist Tracking -->
+                <div class="floating-watchlist asset-watchlist-card">
+                    <div class="watchlist-head-row">
+                        <strong>Asset Management</strong>
+                        <span class="watchlist-badge-live"><i class="bi bi-circle-fill"></i> Live</span>
+                    </div>
+
+                    <div class="watchlist-items-list">
+                        <div class="watchlist-item">
+                            <div class="stock-meta">
+                                <b class="stock-dot green"></b>
+                                <span class="stock-name">Infosys</span>
+                            </div>
+                            <div class="stock-numbers">
+                                <em>₹1,492.45</em>
+                                <span class="stock-chg green">+2.4%</span>
+                            </div>
+                        </div>
+
+                        <div class="watchlist-item">
+                            <div class="stock-meta">
+                                <b class="stock-dot green"></b>
+                                <span class="stock-name">HDFC Bank</span>
+                            </div>
+                            <div class="stock-numbers">
+                                <em>₹1,711.20</em>
+                                <span class="stock-chg green">+1.6%</span>
+                            </div>
+                        </div>
+
+                        <div class="watchlist-item">
+                            <div class="stock-meta">
+                                <b class="stock-dot red"></b>
+                                <span class="stock-name">Reliance</span>
+                            </div>
+                            <div class="stock-numbers">
+                                <em>₹1,430.10</em>
+                                <span class="stock-chg red">-0.8%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Front Floating Card: Sleek Strategy Yield -->
                 <div class="preview-card performance-card">
-                    <span>Performance</span>
-                    <div class="bars color-bars">
-                        <i style="height:72%"></i><i style="height:91%"></i>
-                        <i style="height:63%"></i><i style="height:82%"></i>
-                        <i style="height:56%"></i>
+                    <div class="card-head-row">
+                        <div>
+                            <span class="card-label">Strategy Yield</span>
+                            <div class="card-live-value">
+                                <strong class="stat-count" data-target="34.6" data-decimals="1" data-prefix="+" data-suffix="%">+0.0%</strong>
+                                <span class="badge-growth-pill"><i class="bi bi-graph-up-arrow"></i> +12.4% Alpha</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bars-wrapper">
+                        <div class="bars simple-bars">
+                            <div class="bar-item">
+                                <i style="height:72%"></i>
+                                <span class="bar-lbl">Tech</span>
+                            </div>
+                            <div class="bar-item active">
+                                <i style="height:90%"></i>
+                                <span class="bar-lbl">Banking</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:64%"></i>
+                                <span class="bar-lbl">Auto</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:80%"></i>
+                                <span class="bar-lbl">Energy</span>
+                            </div>
+                            <div class="bar-item">
+                                <i style="height:55%"></i>
+                                <span class="bar-lbl">Pharma</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clean 2-Metric Footer -->
+                    <div class="performance-stats-footer">
+                        <div class="perf-stat">
+                            <span>Sharpe Ratio</span>
+                            <strong>2.41</strong>
+                        </div>
+                        <div class="perf-stat">
+                            <span>Win Rate</span>
+                            <strong class="text-green">78.4%</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="landing-section assistant-section">
+        <section class="landing-section assistant-section reveal-on-scroll">
             <div class="section-kicker">Assistant</div>
             <h2>Stratix AI with an Intelligent Assistant</h2>
             <p>
@@ -210,7 +408,7 @@
                 strategy organized around your risk profile.
             </p>
 
-            <div class="assistant-map">
+            <div class="assistant-map reveal-stagger">
                 <article><i class="bi bi-lightning-charge"></i><span>Personalized Signals</span></article>
                 <article><i class="bi bi-shield-check"></i><span>Smart Risk Checks</span></article>
                 <div class="assistant-core">AI</div>
@@ -219,8 +417,8 @@
             </div>
         </section>
 
-        <section class="split-showcase" id="security">
-            <div class="showcase-copy">
+        <section class="split-showcase reveal-on-scroll" id="security">
+            <div class="showcase-copy reveal-left">
                 <div class="section-kicker">Security</div>
                 <h2>Portfolio discipline with clear controls.</h2>
                 <p>
@@ -229,13 +427,13 @@
                 </p>
                 <a href="{{ url_for('register') }}" class="mini-pill">Create Account</a>
             </div>
-            <div class="security-visual" aria-hidden="true">
+            <div class="security-visual reveal-right" aria-hidden="true">
                 <i class="bi bi-lock"></i>
                 <span></span>
             </div>
         </section>
 
-        <section class="landing-section testimonials">
+        <section class="landing-section testimonials reveal-on-scroll">
             <h2>What investors say.</h2>
             <div class="testimonial-row">
                 <article>
@@ -256,7 +454,7 @@
             </div>
         </section>
 
-        <section class="landing-section faq-section" id="faq">
+        <section class="landing-section faq-section reveal-on-scroll" id="faq">
             <div class="section-kicker">FAQ</div>
             <h2>Frequently Asked Questions</h2>
             <div class="faq-list">
@@ -275,7 +473,7 @@
             </div>
         </section>
 
-        <section class="final-cta">
+        <section class="final-cta reveal-on-scroll">
             <div class="section-kicker">Get Started</div>
             <h2>Think better with Stratix AI</h2>
             <a href="{{ url_for('register') }}" class="landing-pill">Create Free Account</a>
@@ -294,4 +492,5 @@
         </div>
     </footer>
 </div>
+<script src="{{ url_for('static', filename='js/landing-animations.js') }}" defer></script>
 {% endblock %}

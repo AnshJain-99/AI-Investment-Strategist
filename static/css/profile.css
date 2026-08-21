@@ -1,19 +1,19 @@
 .profile-page {
     width: 100%;
-    max-width: 1180px;
+    max-width: 880px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
 }
 
 .profile-hero,
 .profile-sidebar,
 .profile-panel {
-    background: rgba(255, 255, 255, .72);
-    border: 1px solid rgba(226, 232, 240, .76);
-    border-radius: 20px;
-    box-shadow: 0 18px 42px rgba(15, 23, 42, .07);
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(226, 232, 240, .82);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
 }
@@ -21,15 +21,15 @@
 .profile-hero {
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 28px;
-    animation: profileIn .32s ease both;
+    gap: 16px;
+    padding: 16px 20px;
+    animation: profileIn .28s ease both;
 }
 
 @keyframes profileIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(8px);
     }
 
     to {
@@ -39,64 +39,78 @@
 }
 
 .profile-avatar-large {
-    width: 74px;
-    height: 74px;
-    flex: 0 0 74px;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
     background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    border-radius: 20px;
-    font-size: 28px;
+    border-radius: 12px;
+    font-size: 20px;
     font-weight: 700;
-    box-shadow: 0 16px 28px rgba(124, 58, 237, .18);
+    box-shadow: 0 8px 18px rgba(124, 58, 237, .2);
 }
 
 .profile-kicker,
 .panel-heading span {
     color: #7c3aed;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: .04em;
     text-transform: uppercase;
 }
 
-.profile-hero h1,
-.panel-heading h2 {
-    margin: 6px 0;
+.profile-hero h1 {
+    margin: 2px 0;
     color: #111827;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.panel-heading h2 {
+    margin: 3px 0 0;
+    color: #111827;
+    font-size: 19px;
     font-weight: 700;
 }
 
 .profile-hero p {
     margin: 0;
     color: #6b7280;
+    font-size: 13px;
 }
 
 .profile-layout {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 22px;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 16px;
 }
 
 .profile-sidebar {
-    padding: 12px;
+    padding: 8px;
     align-self: start;
+    border-radius: 14px;
 }
 
 .profile-sidebar a {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    padding: 0 13px;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 12px;
     color: #5b6472;
-    border-radius: 12px;
+    border-radius: 10px;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 600;
     transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.profile-sidebar a i {
+    font-size: 15px;
 }
 
 .profile-sidebar a:hover,
@@ -110,35 +124,37 @@
 }
 
 .profile-panel {
-    min-height: 380px;
-    padding: 28px;
-    animation: profileIn .32s ease both;
+    min-height: auto;
+    padding: 20px 24px;
+    border-radius: 16px;
+    animation: profileIn .28s ease both;
 }
 
 .profile-form {
-    max-width: 620px;
+    max-width: 580px;
     display: grid;
-    gap: 18px;
-    margin-top: 22px;
+    gap: 14px;
+    margin-top: 16px;
 }
 
 .profile-form label {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     color: #4b5563;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
 }
 
 .profile-form input,
 .profile-form select {
     width: 100%;
-    height: 48px;
-    padding: 0 14px;
+    height: 40px;
+    padding: 0 12px;
     color: #111827;
-    background: rgba(255, 255, 255, .86);
+    background: rgba(255, 255, 255, .9);
     border: 1px solid #dbe1ea;
-    border-radius: 12px;
+    border-radius: 9px;
+    font-size: 13.5px;
     outline: none;
     transition: border-color .2s ease, box-shadow .2s ease;
 }
@@ -152,40 +168,54 @@
 .profile-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 12px;
 }
 
 .profile-form button {
     width: fit-content;
-    min-height: 46px;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
-    padding: 0 18px;
+    gap: 7px;
+    padding: 0 16px;
     color: #ffffff;
     background: linear-gradient(135deg, #7c3aed, #6d28d9);
     border: 0;
-    border-radius: 12px;
-    font-weight: 700;
-    box-shadow: 0 14px 28px rgba(124, 58, 237, .18);
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: 0 8px 18px rgba(124, 58, 237, .2);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.profile-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(124, 58, 237, .28);
 }
 
 .settings-list {
     display: grid;
-    gap: 14px;
-    margin-top: 22px;
+    gap: 10px;
+    margin-top: 16px;
 }
 
 .setting-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
-    padding: 16px;
+    gap: 14px;
+    padding: 12px 16px;
     background: rgba(248, 250, 252, .78);
     border: 1px solid rgba(226, 232, 240, .82);
-    border-radius: 16px;
+    border-radius: 12px;
+    transition: background .18s ease, border-color .18s ease;
+}
+
+.setting-row:hover {
+    background: rgba(255, 255, 255, .95);
+    border-color: rgba(124, 58, 237, .2);
 }
 
 .setting-row strong,
@@ -195,32 +225,34 @@
 
 .setting-row strong {
     color: #111827;
-    font-size: 14px;
+    font-size: 13.5px;
+    font-weight: 600;
 }
 
 .setting-row span {
-    margin-top: 4px;
+    margin-top: 2px;
     color: #6b7280;
     font-size: 12px;
 }
 
 .settings-toggle {
-    width: 44px;
-    height: 24px;
-    flex: 0 0 44px;
+    width: 36px;
+    height: 18px;
+    flex: 0 0 36px;
     accent-color: #7c3aed;
+    cursor: pointer;
 }
 
 .profile-flashes {
     display: grid;
-    gap: 10px;
-    margin-bottom: 18px;
+    gap: 8px;
+    margin-bottom: 14px;
 }
 
 .profile-flash {
-    padding: 12px 14px;
-    border-radius: 12px;
-    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
     font-weight: 600;
 }
 
@@ -242,6 +274,7 @@
     .profile-hero {
         align-items: flex-start;
         flex-direction: column;
+        gap: 12px;
     }
 
     .profile-form-grid {
